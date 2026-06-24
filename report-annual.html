@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Westmill Industries — FY2026 Board Report</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#f5f5f5;color:#333;line-height:1.6}
+.container{max-width:1500px;margin:0 auto;padding:2rem}
+header{margin-bottom:2rem;background:white;padding:2rem;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+h1{font-size:27px;font-weight:600;margin-bottom:.4rem;color:#1a1a1a}
+.subtitle{font-size:14px;color:#666;margin-bottom:.75rem}
+.date-range{font-size:13px;color:#888}
+.fy-note{display:inline-block;margin-top:.75rem;padding:.35rem .7rem;background:#eef5fc;color:#1565a8;border-radius:4px;font-size:12px;font-weight:500}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:2rem}
+.metric-card{background:white;border:1px solid #e0e0e0;border-radius:8px;padding:1rem;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.metric-card.highlight{border:2px solid #378ADD;background:#f8fbff}
+.metric-label{font-size:11px;color:#666;margin-bottom:.5rem;font-weight:500;text-transform:uppercase}
+.metric-value{font-size:20px;font-weight:600;color:#1a1a1a;margin-bottom:.25rem}
+.metric-subtext{font-size:11px;color:#666}
+.metric-subtext.positive{color:#2d8659}
+.section{background:white;border-radius:8px;padding:1.5rem;margin-bottom:2rem;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.section h2{font-size:18px;font-weight:600;margin-bottom:1rem;color:#1a1a1a;border-bottom:2px solid #378ADD;padding-bottom:.7rem}
+table{width:100%;border-collapse:collapse;font-size:11.5px;margin:1rem 0}
+th{background:#f5f5f5;border-bottom:1px solid #ddd;padding:.6rem;text-align:left;font-weight:600;color:#1a1a1a}
+td{padding:.5rem .6rem;border-bottom:1px solid #eee}
+tr:nth-child(even){background:#fafafa}
+tr.total{background:#eef2f6;font-weight:600;border-top:2px solid #ccd}
+tr.fc td{background:#fff8ef}
+.text-right{text-align:right}
+.positive{color:#2d8659}
+.negative{color:#d85a30}
+.chart-container{position:relative;height:300px;margin:1rem 0}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem}
+@media(max-width:1024px){.grid-2{grid-template-columns:1fr}.metrics-grid{grid-template-columns:repeat(2,1fr)}}
+footer{background:white;border-top:1px solid #e0e0e0;padding:1.5rem;margin-top:2rem;text-align:center;font-size:12px;color:#666;border-radius:8px}
+.summary-text{background:#f9f9f9;border-left:4px solid #378ADD;padding:1rem;margin:1rem 0;border-radius:4px;font-size:13px;line-height:1.7}
+.summary-text strong{color:#1a1a1a}
+.tag{display:inline-block;padding:.15rem .5rem;border-radius:3px;font-size:10px;font-weight:600;background:#fff3e0;color:#d85a30;margin-left:.4rem;vertical-align:middle}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>Westmill Industries — FY2026 Board Report</h1>
+<p class="subtitle">Full-year performance: 11 months actual (Jul 2025–May 2026) plus June forecast</p>
+<p class="date-range">Net income held at pre-tax bridge; June year-end tax accrual to be finalized</p>
+<div class="fy-note">Fiscal Year: July 2025 – June 2026 &nbsp;|&nbsp; Period 11 actual + Period 12 forecast</div>
+</header>
+
+<section class="section">
+<h2>FY2026 Forecast — Full Year</h2>
+<div class="metrics-grid">
+<div class="metric-card highlight"><div class="metric-label">Total Sales</div><div class="metric-value">$16.88M</div><div class="metric-subtext positive">112.5% of budget</div></div>
+<div class="metric-card"><div class="metric-label">Gross Profit</div><div class="metric-value">$7.64M</div><div class="metric-subtext">45.2% margin</div></div>
+<div class="metric-card"><div class="metric-label">Operating Expenses</div><div class="metric-value">$3.49M</div><div class="metric-subtext positive">88.9% of budget</div></div>
+<div class="metric-card"><div class="metric-label">Operating Profit</div><div class="metric-value">$4.15M</div><div class="metric-subtext">24.6% margin</div></div>
+<div class="metric-card highlight"><div class="metric-label">Net Income (pre-tax)</div><div class="metric-value">$4.17M</div><div class="metric-subtext positive">24.7% margin</div></div>
+</div>
+<p style="font-size:12px;color:#666">Figures are Westmill's own forecast from the consolidation Charts tab. Net income holds the 11-month below-the-line items (+$25K net non-operating income) with no incremental June tax accrual applied — year-end tax true-up still to be finalized.</p>
+</section>
+
+<section class="section">
+<h2>Forecast vs. 11-Month Actual</h2>
+<table>
+<thead><tr><th>Line Item</th><th class="text-right">FY Forecast</th><th class="text-right">11-Mo Actual (May YTD)</th><th class="text-right">Implied June</th><th class="text-right">FY Margin</th></tr></thead>
+<tbody>
+<tr><td>Total Sales</td><td class="text-right">$16,879,528</td><td class="text-right">$16,434,652</td><td class="text-right">$444,876</td><td class="text-right">—</td></tr>
+<tr><td>Total COGS</td><td class="text-right">$9,242,719</td><td class="text-right">$9,242,596</td><td class="text-right">$123</td><td class="text-right">54.8%</td></tr>
+<tr class="total"><td>Gross Profit</td><td class="text-right">$7,636,809</td><td class="text-right">$7,192,056</td><td class="text-right">$444,753</td><td class="text-right">45.2%</td></tr>
+<tr><td>Operating Expenses</td><td class="text-right">$3,488,361</td><td class="text-right">$2,752,311</td><td class="text-right">$736,050</td><td class="text-right">20.7%</td></tr>
+<tr class="total"><td>Operating Profit</td><td class="text-right positive">$4,148,448</td><td class="text-right">$4,439,745</td><td class="text-right negative">($291,297)</td><td class="text-right">24.6%</td></tr>
+<tr><td>Net Non-Operating Income</td><td class="text-right">$25,108</td><td class="text-right">$25,108</td><td class="text-right">—</td><td class="text-right">—</td></tr>
+<tr class="total"><td>Net Income (pre-tax)</td><td class="text-right positive">$4,173,556</td><td class="text-right">$4,464,853</td><td class="text-right negative">($291,297)</td><td class="text-right">24.7%</td></tr>
+</tbody>
+</table>
+<p style="font-size:12px;color:#666">The forecast loads the year-end operating-expense catch-up into June ($736K), stepping operating profit down from the May YTD peak. The June COGS and gross-profit lines are a top-down true-up rather than a bottom-up build, so June-only margins should not be read literally.</p>
+</section>
+
+<div class="grid-2">
+<section class="section"><h2>Monthly Sales & Net Income</h2><div class="chart-container"><canvas id="trend"></canvas></div></section>
+<section class="section"><h2>Fiscal Quarter Performance</h2><div class="chart-container"><canvas id="qtr"></canvas></div></section>
+</div>
+
+<section class="section">
+<h2>Monthly Detail (Fiscal Order)</h2>
+<table>
+<thead><tr><th>Month</th><th class="text-right">Sales</th><th class="text-right">Gross Profit</th><th class="text-right">OpEx</th><th class="text-right">Net Income</th><th class="text-right">NI Margin</th></tr></thead>
+<tbody>
+<tr><td>Jul 2025</td><td class="text-right">$890,660</td><td class="text-right">$431,621</td><td class="text-right">$183,416</td><td class="text-right">$281,502</td><td class="text-right positive">31.6%</td></tr>
+<tr><td>Aug 2025</td><td class="text-right">$2,313,792</td><td class="text-right">$1,042,661</td><td class="text-right">$312,969</td><td class="text-right">$671,898</td><td class="text-right positive">29.0%</td></tr>
+<tr><td>Sep 2025</td><td class="text-right">$643,622</td><td class="text-right">$277,602</td><td class="text-right">$308,570</td><td class="text-right">($86,722)</td><td class="text-right negative">-13.5%</td></tr>
+<tr><td>Oct 2025</td><td class="text-right">$1,712,858</td><td class="text-right">$927,778</td><td class="text-right">$179,260</td><td class="text-right">$560,185</td><td class="text-right positive">32.7%</td></tr>
+<tr><td>Nov 2025</td><td class="text-right">$5,959,355</td><td class="text-right">$2,398,339</td><td class="text-right">$297,384</td><td class="text-right">$2,284,328</td><td class="text-right positive">38.3%</td></tr>
+<tr><td>Dec 2025</td><td class="text-right">$471,698</td><td class="text-right">$53,758</td><td class="text-right">$83,483</td><td class="text-right">($89,154)</td><td class="text-right negative">-18.9%</td></tr>
+<tr><td>Jan 2026</td><td class="text-right">$839,578</td><td class="text-right">$302,859</td><td class="text-right">$178,870</td><td class="text-right">$178,021</td><td class="text-right positive">21.2%</td></tr>
+<tr><td>Feb 2026</td><td class="text-right">$217,665</td><td class="text-right">$120,707</td><td class="text-right">$183,905</td><td class="text-right">$3,074</td><td class="text-right">1.4%</td></tr>
+<tr><td>Mar 2026</td><td class="text-right">$1,487,648</td><td class="text-right">$428,710</td><td class="text-right">$241,197</td><td class="text-right">$250,211</td><td class="text-right positive">16.8%</td></tr>
+<tr><td>Apr 2026</td><td class="text-right">$843,028</td><td class="text-right">$285,013</td><td class="text-right">$405,935</td><td class="text-right">($229,632)</td><td class="text-right negative">-27.2%</td></tr>
+<tr><td>May 2026</td><td class="text-right">$1,054,747</td><td class="text-right">$923,008</td><td class="text-right">$377,323</td><td class="text-right">$641,143</td><td class="text-right positive">60.8%</td></tr>
+<tr class="fc"><td>Jun 2026<span class="tag">forecast</span></td><td class="text-right">$444,876</td><td class="text-right">$444,753</td><td class="text-right">$736,050</td><td class="text-right">($291,297)</td><td class="text-right negative">—</td></tr>
+<tr class="total"><td>FY2026 Total</td><td class="text-right">$16,879,528</td><td class="text-right">$7,636,809</td><td class="text-right">$3,488,361</td><td class="text-right positive">$4,173,556</td><td class="text-right positive">24.7%</td></tr>
+</tbody>
+</table>
+</section>
+
+<section class="section">
+<h2>Fiscal Quarter Summary</h2>
+<table>
+<thead><tr><th>Quarter</th><th class="text-right">Sales</th><th class="text-right">% of FY</th><th class="text-right">OpEx</th><th class="text-right">Net Income</th><th class="text-right">NI Margin</th></tr></thead>
+<tbody>
+<tr><td><strong>Q1</strong> (Jul–Sep 2025)</td><td class="text-right">$3,848,075</td><td class="text-right">22.8%</td><td class="text-right">$804,955</td><td class="text-right positive">$866,677</td><td class="text-right positive">22.5%</td></tr>
+<tr><td><strong>Q2</strong> (Oct–Dec 2025)</td><td class="text-right">$8,143,911</td><td class="text-right">48.2%</td><td class="text-right">$560,127</td><td class="text-right positive">$2,755,359</td><td class="text-right positive">33.8%</td></tr>
+<tr><td><strong>Q3</strong> (Jan–Mar 2026)</td><td class="text-right">$2,544,891</td><td class="text-right">15.1%</td><td class="text-right">$603,972</td><td class="text-right positive">$431,306</td><td class="text-right positive">16.9%</td></tr>
+<tr><td><strong>Q4</strong> (Apr–Jun 2026)<span class="tag">incl. forecast</span></td><td class="text-right">$2,342,651</td><td class="text-right">13.9%</td><td class="text-right">$1,519,307</td><td class="text-right positive">$120,213</td><td class="text-right">5.1%</td></tr>
+<tr class="total"><td><strong>FULL YEAR</strong></td><td class="text-right">$16,879,528</td><td class="text-right">100.0%</td><td class="text-right">$3,488,361</td><td class="text-right positive">$4,173,556</td><td class="text-right positive">24.7%</td></tr>
+</tbody>
+</table>
+</section>
+
+<section class="section">
+<h2>Net Working Capital Summary</h2>
+<p style="font-size:13px;color:#555;margin-bottom:.5rem">Westmill is a project-based business with favorable terms — 30% deposit at order and funds in place before vendors are paid — and carries <strong>no debt</strong>. Customer deposits (deferred revenue) fund roughly 60% of the receivables-and-inventory investment, so net working capital absorbs only about <strong>6.8% of sales</strong> after deposits, well below the 15–25% typical of capital-equipment manufacturers.</p>
+<div class="metrics-grid">
+<div class="metric-card"><div class="metric-label">Op NWC (excl. deposits)</div><div class="metric-value">$3.11M</div><div class="metric-subtext">avg · 18.9% of sales</div></div>
+<div class="metric-card highlight"><div class="metric-label">Net WC after deposits</div><div class="metric-value">$1.12M</div><div class="metric-subtext positive">avg · 6.8% of sales</div></div>
+<div class="metric-card"><div class="metric-label">Customer Deposits (avg)</div><div class="metric-value">$1.99M</div><div class="metric-subtext">funds 59% of AR+Inv</div></div>
+<div class="metric-card"><div class="metric-label">Cash Conversion Cycle</div><div class="metric-value">81 days</div><div class="metric-subtext">~36 days after deposits</div></div>
+<div class="metric-card"><div class="metric-label">Current Ratio (May)</div><div class="metric-value">8.4x</div><div class="metric-subtext positive">debt-free</div></div>
+</div>
+<table>
+<thead><tr><th>Month</th><th class="text-right">AR</th><th class="text-right">Inventory</th><th class="text-right">AP + Accruals</th><th class="text-right">Deferred Revenue</th><th class="text-right">Op NWC (excl. dep.)</th><th class="text-right">Net WC (after dep.)</th></tr></thead>
+<tbody>
+<tr><td>Jul 2025</td><td class="text-right">$2,426,434</td><td class="text-right">$1,442,503</td><td class="text-right">$377,966</td><td class="text-right">$3,463,344</td><td class="text-right">$4,075,743</td><td class="text-right">$612,399</td></tr>
+<tr><td>Aug 2025</td><td class="text-right">$3,312,309</td><td class="text-right">$1,356,426</td><td class="text-right">($67,946)</td><td class="text-right">$3,209,167</td><td class="text-right">$4,691,898</td><td class="text-right">$1,482,731</td></tr>
+<tr><td>Sep 2025</td><td class="text-right">$5,431,865</td><td class="text-right">$1,397,133</td><td class="text-right">$155,307</td><td class="text-right">$5,371,874</td><td class="text-right">$6,489,043</td><td class="text-right">$1,117,168</td></tr>
+<tr><td>Oct 2025</td><td class="text-right">$1,389,488</td><td class="text-right">$1,264,087</td><td class="text-right">($650,969)</td><td class="text-right">$4,715,795</td><td class="text-right">$3,179,152</td><td class="text-right negative">($1,536,642)</td></tr>
+<tr><td>Nov 2025</td><td class="text-right">$2,944,177</td><td class="text-right">$1,241,594</td><td class="text-right">$1,616,346</td><td class="text-right">$1,065,376</td><td class="text-right">$2,508,859</td><td class="text-right">$1,443,483</td></tr>
+<tr><td>Dec 2025</td><td class="text-right">$2,763,698</td><td class="text-right">$1,231,694</td><td class="text-right">$485,037</td><td class="text-right">$954,722</td><td class="text-right">$3,423,417</td><td class="text-right">$2,468,695</td></tr>
+<tr><td>Jan 2026</td><td class="text-right">$805,984</td><td class="text-right">$1,287,484</td><td class="text-right">$227,794</td><td class="text-right">$648,160</td><td class="text-right">$1,787,399</td><td class="text-right">$1,139,238</td></tr>
+<tr><td>Feb 2026</td><td class="text-right">$893,175</td><td class="text-right">$1,304,599</td><td class="text-right">($69,882)</td><td class="text-right">$1,022,001</td><td class="text-right">$2,179,572</td><td class="text-right">$1,157,571</td></tr>
+<tr><td>Mar 2026</td><td class="text-right">$650,152</td><td class="text-right">$1,352,451</td><td class="text-right">$276,098</td><td class="text-right">$441,408</td><td class="text-right">$1,633,314</td><td class="text-right">$1,191,906</td></tr>
+<tr><td>Apr 2026</td><td class="text-right">$727,453</td><td class="text-right">$1,292,357</td><td class="text-right">$304,122</td><td class="text-right">$365,325</td><td class="text-right">$1,624,620</td><td class="text-right">$1,259,295</td></tr>
+<tr><td>May 2026</td><td class="text-right">$1,599,699</td><td class="text-right">$1,357,201</td><td class="text-right">$240,367</td><td class="text-right">$673,596</td><td class="text-right">$2,646,522</td><td class="text-right">$1,972,926</td></tr>
+<tr class="total"><td>Average</td><td class="text-right">$2,085,858</td><td class="text-right">$1,320,685</td><td class="text-right">$263,113</td><td class="text-right">$1,993,706</td><td class="text-right">$3,112,685</td><td class="text-right">$1,118,979</td></tr>
+</tbody>
+</table>
+<p style="font-size:12px;color:#666">Op NWC (excl. deposits) = AR + WIP + Inventory + Prepaids − AP/accruals − government remittances − warranty. Net WC (after deposits) additionally subtracts deferred revenue (customer deposits). Cash, short-term investments, tax balances, and related-party balances are excluded as non-operating. Efficiency metrics (DSO 42 / DIO 48 / DPO 10 days) use 11-month flows against average balances and are directional given project lumpiness.</p>
+</section>
+
+<section class="section">
+<h2>Key Takeaways</h2>
+<div class="summary-text"><strong>Q2 (Oct–Dec) carried the year.</strong> November alone delivered $5.96M sales and $2.28M net income (38.3% margin) — a major equipment delivery quarter. Q2 represents nearly half of full-year sales at 48.2%.</div>
+<div class="summary-text"><strong>Full-year forecast: $16.88M sales, $4.17M pre-tax net income (24.7% margin).</strong> Sales finish at 112.5% of the $15.0M budget; operating expenses land at 88.9% of budget, both favorable.</div>
+<div class="summary-text"><strong>June absorbs the year-end OpEx catch-up.</strong> The forecast loads ~$736K of operating expense into the final period — roughly double a normal month — pulling June to a planned operating loss and stepping full-year operating profit down to $4.15M from the $4.44M May YTD peak. This is expected year-end accrual timing, not a deterioration in the business.</div>
+<div class="summary-text"><strong>Net income held pre-tax.</strong> The $4.17M figure carries the 11-month below-the-line items with no incremental June tax accrual. The year-end tax true-up remains to be finalized and will reduce the after-tax figure.</div>
+<div class="summary-text"><strong>Working capital is structurally light and customer-funded.</strong> Net working capital after deposits averages just $1.12M (6.8% of sales). With 30% paid at order, funds secured before vendors are paid, and no debt, incremental projects are largely self-funding — growth does not consume cash the way it does for most capital-equipment manufacturers.</div>
+</section>
+
+<footer>
+<p><strong>Sources:</strong> Monthly Consolidation_FS files (Jul 2025–May 2026), PL Consol v Budget sheets; June forecast from May file Charts tab. Fiscal year July–June.</p>
+<p style="margin-top:.75rem">Generated June 24, 2026 · Westmill Industries Ltd. · For Board Review</p>
+</footer>
+</div>
+
+<script>
+const P='#378ADD',G='#1D9E75',W='#D85A30';
+new Chart(document.getElementById('trend'),{type:'line',
+data:{labels:['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun*'],
+datasets:[
+{label:'Sales ($M)',data:[0.89,2.31,0.64,1.71,5.96,0.47,0.84,0.22,1.49,0.84,1.05,0.44],borderColor:P,backgroundColor:'rgba(55,138,221,.06)',borderWidth:2,fill:true,tension:.35,yAxisID:'y'},
+{label:'Net Income ($M)',data:[0.28,0.67,-0.09,0.56,2.28,-0.09,0.18,0.00,0.25,-0.23,0.64,-0.29],borderColor:G,borderWidth:2,fill:false,tension:.35,yAxisID:'y'}
+]},
+options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+plugins:{legend:{position:'top'}},
+scales:{y:{ticks:{callback:v=>'$'+v.toFixed(1)+'M'}}}}});
+
+new Chart(document.getElementById('qtr'),{type:'bar',
+data:{labels:['Q1','Q2','Q3','Q4*'],
+datasets:[
+{label:'Sales ($M)',data:[3.85,8.14,2.54,2.34],backgroundColor:P,borderRadius:4},
+{label:'Net Income ($M)',data:[0.87,2.76,0.43,0.12],backgroundColor:G,borderRadius:4}
+]},
+options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},
+scales:{y:{ticks:{callback:v=>'$'+v.toFixed(1)+'M'}}}}});
+</script>
+</body>
+</html>
