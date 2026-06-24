@@ -1,0 +1,3565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parts Sales Explorer &mdash; June 15</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="data.js?v=1782260906"></script>
+<style>
+  :root{
+    --ink:#1c1a17; --paper:#f3efe7; --panel:#fbf9f4; --line:#d8d1c2;
+    --rust:#a8482a; --rust-dk:#7d3420; --moss:#4a5d3a; --steel:#3a4a5d;
+    --amber:#c98a2b; --mut:#7a7264; --grid:#e6e0d4;
+    --pos:#4a5d3a; --neg:#a8482a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Nunito","Quicksand","Varela Round",ui-rounded,"Hiragino Maru Gothic ProN","Segoe UI",system-ui,sans-serif;
+    background:var(--paper); color:var(--ink); font-size:13.5px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1480px;margin:0 auto;padding:22px 26px 60px}
+
+  header.masthead{
+    border-bottom:2px solid var(--ink); padding-bottom:14px; margin-bottom:20px;
+    display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap;
+  }
+  .title-block h1{
+    font-size:30px; font-weight:800; letter-spacing:-.3px; line-height:1.02;
+    font-family:"Nunito","Quicksand",ui-rounded,sans-serif;
+  }
+  .title-block .sub{
+    font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--mut);
+    margin-top:7px; font-weight:600;
+  }
+  .masthead .meta{font-size:10.5px;color:var(--mut);text-align:right;letter-spacing:.04em}
+  .masthead .meta b{color:var(--rust);font-weight:700}
+
+  /* KPI strip */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:1.5px;background:var(--line);
+    border:1.5px solid var(--line);margin-bottom:20px;border-radius:12px;overflow:hidden}
+  .kpi{background:var(--panel);padding:14px 16px}
+  .kpi .lab{font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--mut);font-weight:700}
+  .kpi .val{font-size:24px;font-weight:800;margin-top:5px;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+  .kpi .val.rust{color:var(--rust)}
+  .kpi .val.moss{color:var(--moss)}
+  .kpi .val.steel{color:var(--steel)}
+
+  /* controls */
+  .filterbar{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .filtertoggle{display:flex;align-items:center;gap:10px;font-family:inherit;
+    background:var(--panel);border:1.5px solid var(--line);border-radius:10px;
+    padding:9px 15px;cursor:pointer;font-size:13px;font-weight:800;color:var(--ink);letter-spacing:.01em}
+  .filtertoggle:hover{border-color:var(--ink)}
+  .filtertoggle .caret{font-size:10px;color:var(--rust);transition:transform .2s ease;display:inline-block}
+  .filtertoggle.collapsed .caret{transform:rotate(-90deg)}
+  .active-summary{font-size:11.5px;font-weight:600;color:var(--mut);letter-spacing:0}
+  .active-summary b{color:var(--rust);font-weight:800}
+  .btn.tiny{font-size:11px;padding:7px 12px}
+  .controls{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
+    background:var(--panel);border:1.5px solid var(--line);padding:16px 18px;margin-bottom:18px;border-radius:12px;
+    overflow:hidden;transition:max-height .28s ease,opacity .2s ease,padding .28s ease,margin .28s ease,border-width .28s ease}
+  .controls.collapsed{max-height:0;opacity:0;padding-top:0;padding-bottom:0;margin-bottom:0;border-width:0;pointer-events:none}
+  .ctl label{display:block;font-size:11px;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--mut);margin-bottom:5px;font-weight:700}
+  .ctl input,.ctl select{
+    width:100%;font-family:inherit;font-size:13px;color:var(--ink);font-weight:600;
+    background:#fff;border:1.5px solid var(--line);padding:8px 10px;border-radius:8px;
+  }
+  .ctl input:focus,.ctl select:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:var(--amber)}
+  .boxfilter{width:100%;font-family:inherit;font-size:12px;font-weight:600;color:var(--ink);
+    background:#fff;border:1.5px solid var(--line);padding:6px 9px;border-radius:8px 8px 0 0;border-bottom:none;margin-bottom:0}
+  .boxfilter:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:var(--amber);position:relative;z-index:1}
+  .checklist{height:128px;overflow-y:auto;background:#fff;border:1.5px solid var(--line);border-radius:0 0 8px 8px;padding:4px}
+  .ctl .boxfilter + .checklist{border-radius:0 0 8px 8px}
+  .checklist.tall{height:170px;border-radius:8px}
+  .checklist label{display:flex;align-items:center;gap:7px;padding:4px 7px;border-radius:6px;
+    font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer;text-transform:none;letter-spacing:0;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .checklist label:hover{background:#f1ecdf}
+  .checklist label.on{background:#ece6d8}
+  .checklist input[type=checkbox]{width:15px;height:15px;accent-color:var(--rust);flex:0 0 auto;cursor:pointer;margin:0}
+  .checklist .lbltext{overflow:hidden;text-overflow:ellipsis}
+  .checklist .nomatch{padding:8px;color:var(--mut);font-size:11px;font-weight:600}
+  .cnt{font-size:10px;color:var(--rust);font-weight:800;letter-spacing:0;text-transform:none}
+  .hint{font-size:10px;color:var(--mut);margin-top:5px;letter-spacing:.01em;font-weight:600}
+
+  .actionbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+  .group-toggle{display:flex;border:1px solid var(--ink)}
+  .group-toggle button{
+    font-family:inherit;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    background:var(--panel);color:var(--ink);border:none;border-right:1px solid var(--ink);
+    padding:8px 15px;cursor:pointer;font-weight:600;
+  }
+  .group-toggle button:last-child{border-right:none}
+  .group-toggle button.on{background:var(--ink);color:var(--paper)}
+  .grpsel{display:flex;align-items:center;gap:8px}
+  .grp-dd{font-family:inherit;font-size:12px;letter-spacing:.02em;font-weight:700;
+    background:#fff;color:var(--ink);border:1.5px solid var(--ink);padding:8px 13px;cursor:pointer;border-radius:8px}
+  .grp-dd:focus{outline:2px solid var(--amber);outline-offset:1px}
+  .grp-dd:disabled{opacity:.4;cursor:not-allowed;border-color:var(--line)}
+  .grp-then{font-size:11px;letter-spacing:.02em;text-transform:uppercase;color:var(--mut);font-weight:700}
+  .grp-then.off{opacity:.35}
+  .btn{font-family:inherit;font-size:12px;letter-spacing:.02em;
+    background:#fff;border:1.5px solid var(--line);padding:8px 15px;cursor:pointer;font-weight:700;border-radius:8px}
+  .btn:hover{border-color:var(--ink)}
+  .btn.rust{background:var(--rust);color:#fff;border-color:var(--rust)}
+  .btn.rust:hover{background:var(--rust-dk)}
+  .spacer{flex:1}
+  .resultnote{font-size:12px;color:var(--mut);letter-spacing:.01em;font-weight:600}
+  .resultnote b{color:var(--ink);font-weight:800}
+
+  /* table */
+  .tablewrap{border:1.5px solid var(--line);background:var(--panel);overflow:auto;max-height:62vh;border-radius:12px}
+  table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+  thead th{
+    position:sticky;top:0;z-index:2;background:var(--ink);color:var(--paper);
+    font-size:11px;letter-spacing:.02em;text-transform:uppercase;font-weight:700;
+    padding:10px 12px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none;border-right:1px solid #3a3631;
+  }
+  thead th.num{text-align:right}
+  thead th:hover{background:#2c2823}
+  thead th .arr{color:var(--amber);margin-left:3px;font-size:9px}
+  tbody td{padding:7px 11px;border-bottom:1px solid var(--grid);border-right:1px solid var(--grid);white-space:nowrap}
+  tbody td.num{text-align:right}
+  tbody tr:hover{background:#f1ecdf}
+  tbody td.grp{font-weight:600;max-width:520px;white-space:normal;line-height:1.3}
+  tbody tr.subtot td{background:#ece6d8;font-weight:700;border-bottom:1px solid var(--line)}
+  tbody tr.subtot{cursor:pointer}
+  tbody tr.subtot:hover td{background:#e5ddcb}
+  tbody tr.subtot td.grp{color:var(--rust-dk)}
+  tbody tr.subtot td.g1cell .twist{display:inline-block;width:14px;color:var(--rust);font-size:9px;margin-right:2px}
+  tbody tr.subtot .childcount{display:inline-block;font-size:9.5px;font-weight:700;color:var(--mut);
+    background:#fbf9f4;border:1px solid var(--line);border-radius:8px;padding:0 7px;margin-left:4px}
+  tbody tr.childrow td:first-child{padding-left:30px;color:#3a3631;font-weight:500;border-left:3px solid var(--grid)}
+  td.submark{color:var(--mut);font-style:italic;font-weight:600}
+  .collapse-ctl{margin-left:4px}
+  /* column picker panel */
+  .colpanel{background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:18px}
+  .colpanel-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;
+    text-transform:uppercase;letter-spacing:.03em;color:var(--mut);margin-bottom:11px}
+  .colpanel-actions{display:flex;gap:7px}
+  .colgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 14px}
+  .colgrid label{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink);
+    cursor:pointer;padding:4px 6px;border-radius:6px}
+  .colgrid label:hover{background:#f1ecdf}
+  .colgrid input[type=checkbox]{width:15px;height:15px;accent-color:var(--rust);cursor:pointer}
+  .colgrid label.locked{opacity:.5;cursor:not-allowed}
+  .pos{color:var(--pos)}
+  .neg{color:var(--neg)}
+  .mut{color:var(--mut)}
+  .desc{max-width:380px;white-space:normal;line-height:1.3;color:#3a3631}
+  .pct-cell{position:relative}
+  .bar{position:absolute;left:0;top:0;bottom:0;background:rgba(168,72,42,.12);z-index:0}
+  .pct-cell span{position:relative;z-index:1}
+  tfoot td{position:sticky;bottom:0;background:var(--ink);color:var(--paper);font-weight:700;
+    padding:9px 11px;font-size:12px;border-right:1px solid #3a3631}
+  tfoot td.num{text-align:right}
+
+  .chip{display:inline-block;font-size:10px;padding:1px 7px;border:1px solid var(--line);
+    border-radius:0;color:var(--mut);margin-left:6px;letter-spacing:.05em}
+  .empty{padding:40px;text-align:center;color:var(--mut);font-size:13px}
+
+
+  .tablewrap{overflow:visible}
+  .tablewrap table{position:relative}
+
+  @media(max-width:1000px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .controls{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:640px){
+    .controls{grid-template-columns:1fr}
+    .kpis{grid-template-columns:1fr 1fr}
+    .wrap{padding:16px 14px 50px}
+  }
+
+  /* collapsible sections */
+  .section-toggle-bar{margin-bottom:6px;display:flex;align-items:center;gap:12px}
+  .section-toggle{display:inline-flex;align-items:center;gap:8px;font-family:inherit;background:none;border:none;
+    padding:0;cursor:pointer;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+  .section-toggle:hover{color:var(--ink)}
+  .section-toggle .caret{font-size:9px;color:var(--rust);transition:transform .2s ease;display:inline-block}
+  .section-toggle.collapsed .caret{transform:rotate(-90deg)}
+  .collapsible-section{transition:max-height .28s ease,opacity .2s ease,margin .28s ease;overflow:hidden}
+  .collapsible-section.collapsed{max-height:0!important;opacity:0;margin-bottom:0!important;pointer-events:none}
+  .topcust-bar{flex-wrap:wrap}
+  .tc-cur-group{display:flex;gap:5px;align-items:center}
+
+  /* top customers */
+  .topcust-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;max-height:600px}
+  .topcust-panel{background:var(--panel);border:1.5px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+  .topcust-head{background:var(--ink);color:var(--paper);font-size:11px;font-weight:700;letter-spacing:.04em;
+    text-transform:uppercase;padding:9px 13px}
+  .topcust-total{padding:6px 13px;background:#f7f4ee;border-bottom:1px solid var(--line);
+    font-size:11px;font-weight:700;color:var(--mut);display:flex;justify-content:space-between;align-items:center}
+  .topcust-total .tot-val{font-size:13px;font-weight:800;color:var(--ink)}
+  .topcust-total .tot-cur{font-size:10px;color:var(--mut);margin-left:4px}
+  .topcust-tbl{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+  .topcust-tbl th{background:var(--grid);color:var(--mut);font-size:10px;letter-spacing:.04em;text-transform:uppercase;
+    font-weight:700;padding:6px 11px;text-align:left;border-bottom:1px solid var(--line)}
+  .topcust-tbl th.num{text-align:right}
+  .topcust-tbl td{padding:7px 11px;border-bottom:1px solid var(--grid)}
+  .topcust-tbl td.num{text-align:right}
+  .topcust-tbl tr:last-child td{border-bottom:none}
+  .topcust-tbl tr:hover td{background:#f1ecdf;cursor:pointer}
+  .topcust-tbl .rank{color:var(--mut);font-weight:700;font-size:11px;width:20px}
+  /* row tooltip */
+  .topcust-tbl tbody tr{position:relative}
+  .topcust-tbl tbody tr .tc-tip{
+    display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    background:var(--ink);color:var(--paper);border:1px solid var(--amber);
+    border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;
+    white-space:nowrap;z-index:10;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.2)
+  }
+  .topcust-tbl tbody tr:hover .tc-tip{display:block}
+  .topcust-controls{display:flex;flex-wrap:wrap;gap:5px;padding:9px 11px;border-bottom:1px solid var(--line);background:var(--paper)}
+  .topcust-controls select{font-family:inherit;font-size:11px;font-weight:700;color:var(--ink);background:#fff;
+    border:1.5px solid var(--line);padding:4px 8px;border-radius:7px;cursor:pointer}
+  .topcust-controls select:focus{outline:2px solid var(--amber);outline-offset:1px}
+  .tc-chip{font-family:inherit;font-size:10.5px;font-weight:700;letter-spacing:.02em;
+    border:1.5px solid var(--line);background:#fff;color:var(--mut);
+    padding:3px 9px;border-radius:20px;cursor:pointer;transition:all .12s}
+  .tc-chip:hover{border-color:var(--ink);color:var(--ink)}
+  .tc-chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .tc-chip.qtr{border-color:var(--steel);color:var(--steel)}
+  .tc-chip.qtr.on{background:var(--steel);color:var(--paper);border-color:var(--steel)}
+  .tc-chip.cur-cad.on{background:var(--moss);border-color:var(--moss)}
+  .tc-chip.cur-usd.on{background:var(--steel);border-color:var(--steel)}
+  .tc-divider{width:1px;background:var(--line);margin:2px 2px;align-self:stretch}
+  .topcust-footer{padding:8px 13px;border-top:1px solid var(--line);background:#f7f4ee;
+    display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700}
+  .topcust-footer .pct-summary{color:var(--mut)}
+  .topcust-footer .pct-summary b{color:var(--ink)}
+  .topcust-footer .show-more{font-family:inherit;font-size:10.5px;font-weight:700;background:none;
+    border:1.5px solid var(--line);border-radius:20px;padding:3px 10px;cursor:pointer;color:var(--mut)}
+  .topcust-footer .show-more:hover{border-color:var(--ink);color:var(--ink)}
+  @media(max-width:700px){.topcust-grid{grid-template-columns:1fr}}
+
+  /* ── Charts section ── */
+  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  .chart-wide{margin-bottom:14px}
+  .chart-card{background:var(--panel);border:1.5px solid var(--line);border-radius:12px;overflow:hidden}
+  .chart-card-head{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 15px;border-bottom:1px solid var(--line);gap:10px;flex-wrap:wrap}
+  .chart-card-head h3{font-size:12px;font-weight:800;text-transform:uppercase;
+    letter-spacing:.04em;color:var(--mut);margin:0}
+  .chart-card-body{padding:14px 16px 10px;position:relative}
+  .chart-tabs{display:flex;gap:4px}
+  .chart-tab{font-family:inherit;font-size:10.5px;font-weight:700;letter-spacing:.02em;
+    border:1.5px solid var(--line);background:#fff;color:var(--mut);
+    padding:3px 9px;border-radius:20px;cursor:pointer;transition:all .12s}
+  .chart-tab:hover{border-color:var(--ink);color:var(--ink)}
+  .chart-tab.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .chart-tab.cad.on{background:var(--moss);border-color:var(--moss)}
+  .chart-tab.usd.on{background:var(--steel);border-color:var(--steel)}
+  .chart-cur-pill{display:flex;gap:4px}
+  .chart-legend{display:flex;flex-wrap:wrap;gap:8px;padding:6px 16px 10px;border-top:1px solid var(--grid)}
+  .chart-legend-item{display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--mut);cursor:pointer}
+  .chart-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  @media(max-width:900px){.charts-grid{grid-template-columns:1fr}}
+
+  /* P-items toggle */
+  .p-toggle-wrap{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin-left:4px}
+  .p-toggle-label{font-size:12px;font-weight:700;color:var(--mut)}
+  .p-toggle-wrap:hover .p-toggle-label{color:var(--ink)}
+  .p-toggle-track{display:inline-flex;align-items:center;width:36px;height:20px;border-radius:20px;
+    background:var(--line);border:1.5px solid var(--line);transition:background .2s,border-color .2s;flex-shrink:0;padding:2px}
+  .p-toggle-thumb{width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);
+    transition:transform .2s;transform:translateX(0)}
+  .p-toggle-wrap.on .p-toggle-track{background:var(--rust);border-color:var(--rust)}
+  .p-toggle-wrap.on .p-toggle-thumb{transform:translateX(16px)}
+  .p-toggle-wrap.on .p-toggle-label{color:var(--rust);font-weight:800}
+
+  .cust-link{color:var(--rust-dk);font-weight:800;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px;cursor:pointer}
+  .cust-link:hover{color:var(--rust);background:#f1ecdf}
+  .drill-hint{font-size:10px;color:var(--mut);font-weight:700;margin-left:6px;text-transform:uppercase;letter-spacing:.04em}
+
+  /* ── Drill-down modal ── */
+  .drill-overlay{display:none;position:fixed;inset:0;background:rgba(28,26,23,.55);z-index:200;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto}
+  .drill-overlay.open{display:flex}
+  .drill-modal{background:var(--paper);border:1.5px solid var(--line);border-radius:14px;width:100%;max-width:1280px;box-shadow:0 16px 48px rgba(0,0,0,.28);display:flex;flex-direction:column;max-height:calc(100vh - 64px)}
+  .drill-header{display:flex;align-items:baseline;gap:12px;padding:18px 22px 14px;border-bottom:1.5px solid var(--line);flex-wrap:wrap}
+  .drill-header h2{font-size:22px;font-weight:800;margin:0;line-height:1.1}
+  .drill-header .drill-sub{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:700}
+  .drill-close{margin-left:auto;background:none;border:1.5px solid var(--line);border-radius:8px;padding:6px 13px;cursor:pointer;font-size:18px;font-weight:700;color:var(--ink);font-family:inherit;line-height:1}
+  .drill-close:hover{border-color:var(--ink);background:#f1ecdf}
+  .drill-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line);border-bottom:1.5px solid var(--line)}
+  .drill-kpi{background:var(--panel);padding:11px 16px}
+  .drill-kpi .lab{font-size:10px;color:var(--mut);text-transform:uppercase;font-weight:700;letter-spacing:.04em}
+  .drill-kpi .val{font-size:18px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+  .drill-toolbar{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1.5px solid var(--line);flex-wrap:wrap}
+  .drill-search{flex:1;min-width:200px;max-width:380px;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);background:#fff;border:1.5px solid var(--line);padding:8px 11px;border-radius:8px}
+  .drill-search:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:var(--amber)}
+  .drill-resnote{font-size:12px;color:var(--mut);font-weight:600}
+  .drill-body{overflow:auto;flex:1}
+  .drill-body table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:12.5px}
+  .drill-body thead th{position:sticky;top:0;z-index:2;background:var(--ink);color:var(--paper);font-size:11px;letter-spacing:.02em;text-transform:uppercase;font-weight:700;padding:9px 11px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none;border-right:1px solid #3a3631}
+  .drill-body thead th:hover{background:#2c2823}
+  .drill-body thead th .arr{color:var(--amber);margin-left:3px;font-size:9px}
+  .drill-body thead th.num,.drill-body td.num{text-align:right}
+  .drill-body td{padding:7px 11px;border-bottom:1px solid var(--grid);border-right:1px solid var(--grid);white-space:nowrap}
+  .drill-body td.desc{max-width:480px;white-space:normal;line-height:1.3}
+  .drill-body tr:hover td{background:#f1ecdf}
+  .drill-empty{padding:40px;text-align:center;color:var(--mut);font-size:13px}
+  @media(max-width:800px){.drill-kpis{grid-template-columns:repeat(3,1fr)}}
+
+  /* ── Tab navigation ── */
+  .tab-nav{display:flex;border-bottom:2px solid var(--ink);margin-bottom:22px;gap:0}
+  .tab-btn{font-family:inherit;font-size:13px;font-weight:800;letter-spacing:.02em;
+    background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;
+    padding:10px 22px;cursor:pointer;color:var(--mut);transition:color .15s,border-color .15s}
+  .tab-btn:hover{color:var(--ink)}
+  .tab-btn.active{color:var(--ink);border-bottom-color:var(--rust)}
+  .tab-btn.insights-tab.active{border-bottom-color:#2a5a3a;color:#2a5a3a}
+  .tab-pane{display:none}
+  .tab-pane.active{display:block}
+
+  /* ── Chart title info tooltips ── */
+  .chart-info{display:inline-flex;align-items:center;justify-content:center;
+    width:15px;height:15px;border-radius:50%;background:var(--mut);color:var(--paper);
+    font-size:9px;font-weight:900;cursor:default;margin-left:6px;flex-shrink:0;
+    vertical-align:middle;position:relative;user-select:none}
+  .chart-info .chart-info-tip{
+    display:none;position:absolute;left:50%;transform:translateX(-50%);
+    top:calc(100% + 8px);width:280px;background:var(--ink);color:var(--paper);
+    border:1.5px solid var(--amber);border-radius:10px;padding:11px 14px;
+    font-size:11px;font-weight:500;line-height:1.55;z-index:200;
+    pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.25);
+    white-space:normal;text-align:left}
+  .chart-info:hover .chart-info-tip{display:block}
+  /* keep tip on-screen when near right edge */
+  .chart-info.tip-left .chart-info-tip{left:auto;right:0;transform:none}
+
+  /* ── Real Growth tab ── */
+  .rg-controls{display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+    background:var(--panel);border:1.5px solid var(--line);border-radius:12px;
+    padding:14px 18px;margin-bottom:18px}
+  .rg-ctl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--mut)}
+  .rg-ctl label{text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+  .rg-ctl input,.rg-ctl select{
+    font-family:inherit;font-size:13px;font-weight:700;color:var(--ink);
+    background:#fff;border:1.5px solid var(--line);padding:6px 10px;border-radius:8px;
+    width:90px;text-align:center}
+  .rg-ctl select{width:auto;text-align:left}
+  .rg-ctl input:focus,.rg-ctl select:focus{outline:2px solid var(--amber);outline-offset:1px}
+  .rg-note{font-size:10.5px;color:var(--mut);font-weight:600;margin-left:auto}
+  .rg-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5px;background:var(--line);
+    border:1.5px solid var(--line);margin-bottom:18px;border-radius:12px;overflow:hidden}
+  .rg-kpi{background:var(--panel);padding:14px 18px}
+  .rg-kpi .lab{font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);font-weight:700}
+  .rg-kpi .val{font-size:26px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+  .rg-kpi .sub{font-size:10px;color:var(--mut);font-weight:600;margin-top:2px}
+  .rg-kpi .val.pos{color:var(--moss)}
+  .rg-kpi .val.neg{color:var(--rust)}
+  .rg-kpi .val.steel{color:var(--steel)}
+  /* ── No Cost Items tab ── */
+  .nc-th{position:sticky;top:0;z-index:2;background:var(--ink);color:var(--paper);font-size:11px;letter-spacing:.02em;text-transform:uppercase;font-weight:700;padding:9px 11px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none;border-right:1px solid #3a3631}
+  .nc-th:hover{background:#2c2823}
+  .nc-th.nc-num{text-align:right}
+  .nc-th.nc-th-icon{width:28px;padding:9px 6px;cursor:default}
+  .nc-th .arr{color:var(--amber);margin-left:3px;font-size:9px}
+  #nc-tbl td{padding:7px 11px;border-bottom:1px solid var(--grid);border-right:1px solid var(--grid);white-space:nowrap;vertical-align:top}
+  #nc-tbl td.nc-desc{max-width:320px;white-space:normal;line-height:1.35}
+  #nc-tbl td.nc-num{text-align:right}
+  #nc-tbl tr.nc-data:hover td{background:#f5f0e8}
+  #nc-tbl tr.nc-grp-row td{background:#ece6d8;font-weight:700;cursor:pointer;border-bottom:1px solid var(--line)}
+  #nc-tbl tr.nc-grp-row:hover td{background:#e5ddcb}
+  #nc-tbl tr.nc-grp-row td.nc-g1cell{color:var(--rust-dk)}
+  #nc-tbl tr.nc-sub-row td{background:#f5efe0;font-weight:700;cursor:pointer;border-bottom:1px solid var(--grid)}
+  #nc-tbl tr.nc-sub-row:hover td{background:#ece6d8}
+  #nc-tbl tr.nc-sub-row td.nc-g2cell{color:#5a3a1a;padding-left:26px}
+  #nc-tbl tr.nc-child-row td{border-left:3px solid var(--line)}
+  #nc-tbl tr.nc-child-row td:first-child{padding-left:24px}
+  .nc-twist{display:inline-block;width:14px;color:var(--rust);font-size:9px;margin-right:2px}
+  .nc-cnt{font-size:9.5px;font-weight:700;color:var(--mut);margin-left:6px}
+  .nc-grp-dd{font-family:inherit;font-size:12px;font-weight:700;color:var(--ink);background:#fff;border:1.5px solid var(--line);padding:5px 8px;border-radius:8px;cursor:pointer}
+  .nc-grp-dd:disabled{opacity:.4;cursor:default}
+  .nc-expand-btn{background:none;border:1.5px solid var(--line);border-radius:5px;width:22px;height:22px;cursor:pointer;font-size:12px;font-weight:700;line-height:1;color:var(--mut);display:flex;align-items:center;justify-content:center;padding:0}
+  .nc-expand-btn:hover{border-color:var(--ink);color:var(--ink);background:#f1ecdf}
+  .nc-detail-row td{background:var(--panel);padding:0!important;border-bottom:2px solid var(--line)}
+  .nc-detail-inner{padding:14px 18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px 20px}
+  .nc-field{display:flex;flex-direction:column;gap:2px}
+  .nc-field.wide{grid-column:span 2}
+  .nc-field .fl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+  .nc-field .fv{font-size:12.5px;font-weight:700;color:var(--ink);overflow-wrap:break-word;word-break:break-word;white-space:normal}
+  .nc-field .fv.so-link{color:var(--steel);text-decoration:underline;cursor:pointer}
+  .nc-field .fv.so-link:hover{color:var(--ink)}
+  #nc-tbl tr.nc-data td.nc-sonumber{color:var(--steel);font-weight:800;cursor:pointer;text-decoration:underline}
+  #nc-tbl tr.nc-data td.nc-sonumber:hover{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<!-- Customer drill-down modal -->
+<div class="drill-overlay" id="drill-overlay" role="dialog" aria-modal="true" aria-labelledby="drill-title">
+  <div class="drill-modal">
+    <div class="drill-header">
+      <div>
+        <h2 id="drill-title"></h2>
+        <div class="drill-sub">Item drill-down &middot; USCASO sales data</div>
+      </div>
+      <button class="drill-close" id="drill-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="drill-kpis" id="drill-kpis"></div>
+    <div class="drill-toolbar">
+      <input class="drill-search" id="drill-search" type="text" placeholder="Filter by item ID, description or class&hellip;" autocomplete="off">
+      <span class="drill-resnote" id="drill-resnote"></span>
+      <div style="flex:1"></div>
+      <button class="btn tiny" id="drill-copy">Copy table</button>
+      <button class="btn tiny" id="drill-print">Print / PDF</button>
+    </div>
+    <div class="drill-body">
+      <table id="drill-tbl">
+        <thead><tr>
+          <th data-k="inv">Item ID<span class="arr"></span></th>
+          <th data-k="desc">Description<span class="arr"></span></th>
+          <th data-k="cls">Item Class<span class="arr"></span></th>
+          <th data-k="cur">Currency<span class="arr"></span></th>
+          <th class="num" data-k="lines">Lines<span class="arr"></span></th>
+          <th class="num" data-k="qty">Qty<span class="arr"></span></th>
+          <th class="num" data-k="rev">Revenue<span class="arr"></span></th>
+          <th class="num" data-k="cost">Cost<span class="arr"></span></th>
+          <th class="num" data-k="marg">Margin<span class="arr"></span></th>
+          <th class="num" data-k="mpct">Margin %<span class="arr"></span></th>
+          <th data-k="first">First Sale<span class="arr"></span></th>
+          <th data-k="last">Last Sale<span class="arr"></span></th>
+        </tr></thead>
+        <tbody id="drill-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- No-cost lines modal (margin % exclusions) -->
+<div class="drill-overlay" id="nocost-overlay" role="dialog" aria-modal="true" aria-labelledby="nocost-title">
+  <div class="drill-modal">
+    <div class="drill-header">
+      <div>
+        <h2 id="nocost-title">Lines with no cost</h2>
+        <div class="drill-sub">Excluded from Avg Margin % &middot; cost not populated in Acumatica</div>
+      </div>
+      <button class="drill-close" id="nocost-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="drill-kpis" id="nocost-kpis"></div>
+    <div class="drill-toolbar">
+      <input class="drill-search" id="nocost-search" type="text" placeholder="Filter by item ID, description, customer or class&hellip;" autocomplete="off">
+      <span class="drill-resnote" id="nocost-resnote"></span>
+    </div>
+    <div class="drill-body">
+      <table id="nocost-tbl">
+        <thead><tr>
+          <th data-k="inv">Item ID<span class="arr"></span></th>
+          <th data-k="desc">Description<span class="arr"></span></th>
+          <th data-k="cust">Customer<span class="arr"></span></th>
+          <th data-k="cls">Item Class<span class="arr"></span></th>
+          <th data-k="fy">FY<span class="arr"></span></th>
+          <th data-k="cur">Cur<span class="arr"></span></th>
+          <th class="num" data-k="qty">Qty<span class="arr"></span></th>
+          <th class="num" data-k="rev">Revenue<span class="arr"></span></th>
+          <th data-k="date">Date<span class="arr"></span></th>
+        </tr></thead>
+        <tbody id="nocost-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="title-block">
+      <h1>Parts Sales Explorer</h1>
+      <div class="sub">Westmill &middot; Acumatica Data &nbsp;<span style="opacity:.55;font-weight:400">v3</span></div>
+    </div>
+    <div id="parts-mode-wrap" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="chart-cur-pill" id="parts-mode-btns"></div>
+      <span id="parts-all-badge" style="display:none;font-size:10px;font-weight:700;color:var(--amber);background:rgba(201,138,43,.12);border:1px solid rgba(201,138,43,.4);border-radius:6px;padding:2px 9px;white-space:nowrap">includes project &amp; intercompany</span>
+    </div>
+    <div class="meta">
+      Source: Acumatica AR &amp; SO exports<br>
+      <span id="loadmeta">loading&hellip;</span>
+    </div>
+  </header>
+
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="monthly">Monthly Report</button>
+    <button class="tab-btn" data-tab="explorer">Parts Explorer</button>
+    <button class="tab-btn" data-tab="growth">Real Growth</button>
+    <button class="tab-btn" data-tab="nocost">No Cost Items</button>
+    <button class="tab-btn insights-tab" data-tab="insights">AI Insights</button>
+  </nav>
+
+  <!-- ══ TAB 1: Monthly Report ══ -->
+  <div class="tab-pane active" id="tab-monthly">
+
+  <div class="section-toggle-bar">
+    <button class="section-toggle" id="kpi-toggle" aria-expanded="true">
+      <span class="caret" id="kpi-caret">&#9660;</span> Summary
+    </button>
+    <div id="summary-fy-btns" class="chart-cur-pill" style="margin-left:auto;flex-wrap:wrap"></div>
+  </div>
+  <div class="kpis collapsible-section" id="kpi-section">
+    <div class="kpi"><div class="lab">Lines Shown</div><div class="val" id="k-lines">&mdash;</div></div>
+    <div class="kpi"><div class="lab">Total Qty <span id="k-qty-eahint" style="font-size:9px;font-weight:600;color:var(--mut);">(EA only)</span></div><div class="val steel" id="k-qty">&mdash;</div></div>
+    <div class="kpi"><div class="lab">Revenue (CAD)</div><div class="val rust" id="k-rev">&mdash;</div></div>
+    <div class="kpi"><div class="lab">Margin (CAD)</div><div class="val moss" id="k-marg">&mdash;</div></div>
+    <div class="kpi"><div class="lab">Avg Margin % <span style="font-size:9px;font-weight:600;color:var(--mut);">(costed lines)</span> <span id="k-nocost-warn" role="button" tabindex="0" title="Some lines have no cost and are excluded from this margin %. Click to view." style="display:none;cursor:pointer;color:var(--rust);font-weight:800;font-size:12px;margin-left:2px">&#9888;</span></div><div class="val moss" id="k-mpct">&mdash;</div></div>
+  </div>
+
+  <!-- ── Charts section ── -->
+  <div class="section-toggle-bar" style="margin-top:10px">
+    <button class="section-toggle" id="charts-toggle" aria-expanded="true">
+      <span class="caret" id="charts-caret">&#9660;</span> Sales Charts
+    </button>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="chart-cur-pill" id="chart-cur-pill">
+        <button class="chart-tab cad on" data-ccur="CAD">CAD</button>
+        <button class="chart-tab usd" data-ccur="USD">USD</button>
+        <button class="chart-tab" data-ccur="ALL">All</button>
+      </div>
+      <div id="fx-wrap" style="display:none;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--mut)">
+        <span>FX&nbsp;rate</span>
+        <input id="fx-input" type="number" step="0.001" min="0.5" max="2" value="1.3723"
+          title="USD → CAD conversion rate (multiply USD by this to get CAD)"
+          style="width:68px;font-family:inherit;font-size:12px;font-weight:700;color:var(--ink);
+            background:#fff;border:1.5px solid var(--line);padding:4px 7px;border-radius:8px;
+            text-align:center">
+        <span style="color:var(--mut);font-size:10px">USD → CAD</span>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+    <span style="font-size:10.5px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.04em">Industry</span>
+    <div class="chart-cur-pill" id="industry-pill"></div>
+    <span id="industry-note" style="font-size:10px;color:var(--mut)">· FY26 only</span>
+  </div>
+  <div class="collapsible-section" id="charts-section" style="margin-bottom:18px">
+    <div class="charts-grid">
+      <!-- Monthly by FY -->
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>Monthly Sales by Year</h3>
+          <div class="chart-tabs" id="monthly-fy-tabs"></div>
+        </div>
+        <div class="chart-card-body"><canvas id="chart-monthly" height="220"></canvas></div>
+        <div class="chart-legend" id="chart-monthly-legend"></div>
+      </div>
+      <!-- Cumulative YTD -->
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>Cumulative Fiscal YTD</h3>
+          <div class="chart-tabs" id="ytd-fy-tabs"></div>
+        </div>
+        <div class="chart-card-body"><canvas id="chart-ytd" height="220"></canvas></div>
+        <div class="chart-legend" id="chart-ytd-legend"></div>
+      </div>
+    </div>
+    <!-- Trailing 12-month and Budget sections toggle -->
+    <div class="section-toggle-bar" style="margin-top:10px">
+      <button class="section-toggle" id="t12bva-toggle" aria-expanded="true">
+        <span class="caret" id="t12bva-caret">&#9660;</span> Trailing 12-Month &amp; Budget
+      </button>
+    </div>
+    <div class="collapsible-section" id="t12bva-section" style="margin-bottom:18px">
+      <!-- Trailing 12-month -->
+      <div class="chart-card chart-wide">
+        <div class="chart-card-head">
+          <h3>Trailing 12-Month Revenue</h3>
+          <div id="t12-subtitle" style="font-size:11px;color:var(--mut);font-weight:600">Rolling sum of last 12 months &mdash; both currencies in origin</div>
+        </div>
+        <div class="chart-card-body"><canvas id="chart-t12" height="160"></canvas></div>
+      </div>
+      <!-- Budget vs Actual -->
+      <div class="chart-card chart-wide">
+        <div class="chart-card-head">
+          <h3>Budget vs Actual &mdash; FY2026</h3>
+          <div class="chart-tabs" id="bva-cur-tabs">
+            <button class="chart-tab cad on" data-bcur="CAD">CAD (WIL)</button>
+            <button class="chart-tab usd" data-bcur="USD">USD (USA)</button>
+          </div>
+        </div>
+        <div class="chart-card-body"><canvas id="chart-bva" height="160"></canvas></div>
+        <div class="chart-legend" id="chart-bva-legend"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-toggle-bar topcust-bar" style="margin-top:10px">
+    <button class="section-toggle" id="topcust-toggle" aria-expanded="true">
+      <span class="caret" id="topcust-caret">&#9660;</span> Top Customers
+    </button>
+    <div class="tc-cur-group" id="tc-cur-group">
+      <button class="tc-chip on" data-gcur="">All</button>
+      <button class="tc-chip cur-cad" data-gcur="CAD">CAD</button>
+      <button class="tc-chip cur-usd" data-gcur="USD">USD</button>
+    </div>
+  </div>
+  <div class="collapsible-section topcust-grid" id="topcust-section">
+    <div class="topcust-panel">
+      <div class="topcust-head" id="topcust-year-head">Top Customers &mdash; By Year</div>
+      <div class="topcust-controls" id="topcust-year-controls"></div>
+      <div class="topcust-total" id="topcust-year-total"></div>
+      <table class="topcust-tbl" id="topcust-year"></table>
+      <div class="topcust-footer" id="topcust-year-footer"></div>
+    </div>
+    <div class="topcust-panel">
+      <div class="topcust-head" id="topcust-month-head">Top Customers &mdash; By Period</div>
+      <div class="topcust-controls" id="topcust-month-controls"></div>
+      <div class="topcust-total" id="topcust-month-total"></div>
+      <table class="topcust-tbl" id="topcust-month"></table>
+      <div class="topcust-footer" id="topcust-month-footer"></div>
+    </div>
+  </div>
+
+  </div><!-- /tab-monthly -->
+
+  <!-- ══ TAB 2: Real Growth ══ -->
+  <!-- ══ TAB 2: Parts Explorer ══ -->
+  <div class="tab-pane" id="tab-explorer">
+
+  <div class="filterbar">
+    <button class="filtertoggle" id="filter-toggle" aria-expanded="true">
+      <span class="caret" id="caret">&#9660;</span>
+      <span>Filters</span>
+      <span class="active-summary" id="active-summary"></span>
+    </button>
+    <button class="btn tiny" id="btn-clearfilters">Clear filters</button>
+    <label class="p-toggle-wrap on" id="p-toggle-wrap" title="Items whose ID starts with P (e.g. P2301-938)">
+      <span class="p-toggle-label">Exclude P-items</span>
+      <span class="p-toggle-track" id="p-toggle-track">
+        <span class="p-toggle-thumb"></span>
+      </span>
+    </label>
+  </div>
+
+  <div class="controls" id="controls">
+    <div class="ctl">
+      <label for="f-search">Search (desc / item / customer)</label>
+      <input id="f-search" type="text" placeholder="e.g. saw chain, equalizer, P05">
+      <div class="hint">Free text across description, item ID and customer</div>
+    </div>
+    <div class="ctl">
+      <label>Customer <span class="cnt" id="cnt-cust"></span></label>
+      <input id="flt-cust" class="boxfilter" type="text" placeholder="filter customers&hellip;">
+      <div class="checklist" id="f-cust"></div>
+      <div class="hint">Tick any &middot; none ticked = all</div>
+    </div>
+    <div class="ctl">
+      <label>Fiscal Year <span class="cnt" id="cnt-fy"></span></label>
+      <div class="checklist tall" id="f-fy"></div>
+      <div class="hint">Tick any &middot; none ticked = all</div>
+    </div>
+    <div class="ctl">
+      <label>Item Class <span class="cnt" id="cnt-cls"></span></label>
+      <input id="flt-cls" class="boxfilter" type="text" placeholder="filter classes&hellip;">
+      <div class="checklist" id="f-cls"></div>
+      <div class="hint">Tick any &middot; none ticked = all</div>
+    </div>
+  </div>
+
+  <div class="actionbar">
+    <span class="resultnote">Group by</span>
+    <div class="grpsel">
+      <select id="grp1" class="grp-dd"></select>
+      <span class="grp-then" id="grp-then">then by</span>
+      <select id="grp2" class="grp-dd" disabled></select>
+      <button class="btn tiny collapse-ctl" id="grp-collapse-ctl" title="Collapse or expand all groups">Collapse all</button>
+    </div>
+    <div class="spacer"></div>
+    <span class="resultnote" id="resnote"></span>
+    <button class="btn" id="btn-columns">Columns</button>
+    <button class="btn" id="btn-reset">Reset</button>
+    <button class="btn" id="btn-csv">Export CSV</button>
+    <button class="btn rust" id="btn-pdf">Export PDF</button>
+  </div>
+
+  <div class="colpanel" id="colpanel" style="display:none">
+    <div class="colpanel-head">
+      <span>Detail columns &mdash; tick to show</span>
+      <span class="colpanel-actions">
+        <button class="btn tiny" id="col-all">All</button>
+        <button class="btn tiny" id="col-none">Numbers only</button>
+      </span>
+    </div>
+    <div class="colgrid" id="colgrid"></div>
+    <div class="hint">In detail view these are the columns shown. In a grouped view, ticked text fields (Customer, Item ID, etc.) appear as extra columns &mdash; showing the shared value, or &ldquo;multiple&rdquo; when a group spans several.</div>
+  </div>
+
+  <div class="tablewrap">
+    <table id="tbl">
+      <thead id="thead"></thead>
+      <tbody id="tbody"></tbody>
+      <tfoot id="tfoot"></tfoot>
+    </table>
+  </div>
+
+  </div><!-- /tab-explorer -->
+
+  <!-- ══ TAB 3: Real Growth ══ -->
+  <div class="tab-pane" id="tab-growth">
+    <div class="rg-controls">
+      <div class="rg-ctl">
+        <label>Annual price increase</label>
+        <input id="rg-rate" type="number" step="0.5" min="0" max="30" value="7">
+        <span style="font-size:11px">%</span>
+      </div>
+      <div class="rg-ctl">
+        <label>Base year</label>
+        <select id="rg-base"></select>
+      </div>
+      <div class="rg-ctl">
+        <label>Fixed FX (USD→CAD)</label>
+        <input id="rg-fx" type="number" step="0.001" min="0.5" max="2" value="1.3723">
+      </div>
+      <div class="rg-note">Revenue deflated to base-year prices &middot; Fixed FX <strong id="rg-fx-display" style="font-family:monospace;font-weight:900;color:var(--ink)">0.720</strong> &middot; CA in CAD · USA in USD (native)</div>
+    </div>
+    <div id="rg-annualize-note" style="display:none;font-size:11.5px;font-weight:700;color:#7a5a1a;background:#fbf0d6;border:1.5px solid var(--amber);border-radius:9px;padding:9px 13px;margin-bottom:16px;line-height:1.5"></div>
+    <div style="font-size:10px;font-weight:600;color:var(--mut);background:#f1ecdf;border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:16px;line-height:1.6">
+      <strong>Deflation methodology:</strong> Price increases occur Jan 1 each year. Jul–Dec revenues are deflated at the prior year's compounded rate (they haven't seen that year's increase yet). Jan–Jun revenues are deflated at the current year's compounded rate. This month-by-month split prevents distortion within a single fiscal year.
+    </div>
+    <!-- KPI cards: CA left, USA right -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5px;background:var(--line);border:1.5px solid var(--line);margin-bottom:18px;border-radius:12px;overflow:hidden">
+      <div class="rg-kpi" style="border-right:1.5px solid var(--line)">
+        <div class="lab" style="display:flex;align-items:center;justify-content:space-between">
+          <span>CA — Nominal CAGR (<span id="rg-ca-range"></span>)</span>
+          <button onclick="rgShowKpiCalc('ca-nom')" style="background:none;border:none;width:18px;height:18px;border-radius:50%;background:var(--mut);color:var(--paper);font-size:11px;font-weight:900;cursor:pointer;flex-shrink:0">i</button>
+        </div>
+        <div class="val steel" id="rg-ca-nom">&mdash;</div>
+        <div class="sub" id="rg-ca-nom-sub"></div>
+      </div>
+      <div class="rg-kpi">
+        <div class="lab" style="display:flex;align-items:center;justify-content:space-between">
+          <span>USA — Nominal CAGR (<span id="rg-us-range"></span>)</span>
+          <button onclick="rgShowKpiCalc('us-nom')" style="background:none;border:none;width:18px;height:18px;border-radius:50%;background:var(--mut);color:var(--paper);font-size:11px;font-weight:900;cursor:pointer;flex-shrink:0">i</button>
+        </div>
+        <div class="val steel" id="rg-us-nom">&mdash;</div>
+        <div class="sub" id="rg-us-nom-sub"></div>
+      </div>
+      <div class="rg-kpi" style="border-right:1.5px solid var(--line);border-top:1.5px solid var(--line)">
+        <div class="lab" style="display:flex;align-items:center;justify-content:space-between">
+          <span>CA — Real CAGR (price-adjusted)</span>
+          <button onclick="rgShowKpiCalc('ca-real')" style="background:none;border:none;width:18px;height:18px;border-radius:50%;background:var(--mut);color:var(--paper);font-size:11px;font-weight:900;cursor:pointer;flex-shrink:0">i</button>
+        </div>
+        <div class="val" id="rg-ca-real">&mdash;</div>
+        <div class="sub" id="rg-ca-real-sub"></div>
+      </div>
+      <div class="rg-kpi" style="border-top:1.5px solid var(--line)">
+        <div class="lab" style="display:flex;align-items:center;justify-content:space-between">
+          <span>USA — Real CAGR (price-adjusted)</span>
+          <button onclick="rgShowKpiCalc('us-real')" style="background:none;border:none;width:18px;height:18px;border-radius:50%;background:var(--mut);color:var(--paper);font-size:11px;font-weight:900;cursor:pointer;flex-shrink:0">i</button>
+        </div>
+        <div class="val" id="rg-us-real">&mdash;</div>
+        <div class="sub" id="rg-us-real-sub"></div>
+      </div>
+    </div>
+    <!-- Hero chart: Growth Index -->
+    <div class="chart-card chart-wide" style="margin-bottom:14px">
+      <div class="chart-card-head">
+        <h3>Real Volume Growth Index &mdash; Base Year = 100
+          <span class="chart-info tip-left">i<span class="chart-info-tip">Sets a base year to 100 and tracks how sales <em>volume</em> has grown or shrunk each year after stripping out annual price increases.<br><br>Solid lines = real (volume only). Dashed lines = nominal (includes price). When the solid line falls below the dashed, the business is growing in dollars but losing volume — customers are buying less, just paying more per unit.<br><br>CA and USA are shown in their native currencies so the growth trajectories are directly comparable without FX distortion.</span></span>
+        </h3>
+        <div style="font-size:10.5px;color:var(--mut);font-weight:600">Price increases removed &middot; CA in CAD &middot; USA in USD (native currencies, comparable growth trajectories)</div>
+      </div>
+      <div class="chart-card-body"><canvas id="rg-chart-index" height="180"></canvas></div>
+    </div>
+    <!-- Annual bars: CA and USA side by side -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>CA Annual Revenue (CAD)
+            <span class="chart-info">i<span class="chart-info-tip">Annual Canadian revenue in CAD.<br><br><strong>Green bars (nominal)</strong> = actual dollars billed. <strong>Dark bars (real)</strong> = what those dollars would be worth in base-year prices, isolating true volume change.<br><br>Both charts share the same Y-axis scale (converted to CAD-equivalent) so bar heights are directly comparable between Canada and USA.</span></span>
+          </h3>
+          <div style="font-size:10px;color:var(--mut);font-weight:600">Nominal vs price-adjusted</div>
+        </div>
+        <div class="chart-card-body"><canvas id="rg-chart-ca" height="220"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>USA Annual Revenue (USD)
+            <span class="chart-info">i<span class="chart-info-tip">Annual US revenue in USD (native currency — no FX conversion).<br><br><strong>Blue bars (nominal)</strong> = actual USD billed. <strong>Dark bars (real)</strong> = volume in base-year USD prices.<br><br>The Y-axis max is set to the CAD-equivalent of the USA scale (using the FX rate in the controls) so this chart is visually comparable to the CA chart beside it.</span></span>
+          </h3>
+          <div style="font-size:10px;color:var(--mut);font-weight:600">Nominal vs price-adjusted</div>
+        </div>
+        <div class="chart-card-body"><canvas id="rg-chart-us" height="220"></canvas></div>
+      </div>
+    </div>
+    <!-- Deflated monthly detail -->
+    <div class="chart-card chart-wide" style="margin-bottom:14px">
+      <div class="chart-card-head">
+        <h3>Deflated Monthly Revenue
+          <span class="chart-info">i<span class="chart-info-tip">Month-by-month revenue with annual price increases removed, restated in base-year dollars.<br><br>Use this to spot seasonal patterns and compare the same month across different fiscal years without price inflation making recent years look artificially stronger.<br><br>These are <strong>actual</strong> monthly figures (not annualized) — the most recent month may be partial if the data export landed mid-month.<br><br>Toggle CA / USA above to switch entity. Select multiple fiscal years to overlay them.</span></span>
+        </h3>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="chart-tabs" id="rg-fy-tabs"></div>
+          <div style="display:flex;gap:4px" id="rg-entity-tabs">
+            <button class="chart-tab cad on" data-rgent="CA">CA</button>
+            <button class="chart-tab usd" data-rgent="USA">USA</button>
+            <button class="chart-tab" data-rgent="ALL" style="background:#c9a87a;color:#fff">ALL (CAD)</button>
+          </div>
+        </div>
+      </div>
+      <div class="chart-card-body"><canvas id="rg-chart-monthly" height="160"></canvas></div>
+      <div class="chart-legend" id="rg-monthly-legend"></div>
+    </div>
+
+    <!-- KPI Calculation Modal -->
+    <div id="rg-kpi-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
+      <div style="background:var(--paper);border:2px solid var(--ink);border-radius:14px;padding:20px;max-width:500px;max-height:80vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,0.3)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+          <h3 id="rg-kpi-modal-title" style="margin:0;font-size:16px;font-weight:700"></h3>
+          <button onclick="document.getElementById('rg-kpi-modal').style.display='none'" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--mut)">&times;</button>
+        </div>
+        <div id="rg-kpi-modal-body" style="font-size:12px;line-height:1.6;font-family:monospace;white-space:pre-wrap;word-break:break-all;background:#f1ecdf;border:1px solid var(--line);border-radius:8px;padding:12px;color:var(--ink)"></div>
+      </div>
+    </div>
+  </div><!-- /tab-growth -->
+
+  <!-- ══ TAB 5: No Cost Items ══ -->
+  <div class="tab-pane" id="tab-nocost">
+    <div style="padding:18px 0 10px">
+
+      <!-- KPI bar -->
+      <div class="kpis" id="nc-kpis" style="margin-bottom:14px">
+        <div class="kpi"><div class="lab">Lines</div><div class="val" id="nc-k-lines">&mdash;</div></div>
+        <div class="kpi"><div class="lab">SO Numbers</div><div class="val steel" id="nc-k-sos">&mdash;</div></div>
+        <div class="kpi"><div class="lab">Revenue (CAD)</div><div class="val rust" id="nc-k-rev">&mdash;</div><div id="nc-k-rev-split" style="font-size:10px;color:var(--mut);margin-top:3px;line-height:1.5"></div></div>
+        <div class="kpi"><div class="lab">Distinct Items</div><div class="val" id="nc-k-items">&mdash;</div></div>
+      </div>
+
+      <!-- No Cost Items list toggle -->
+      <div class="section-toggle-bar" style="margin-top:14px">
+        <button class="section-toggle" id="nc-list-toggle" aria-expanded="false">
+          <span class="caret" id="nc-list-caret">&#9658;</span> No Cost Items List
+        </button>
+      </div>
+      <div class="collapsible-section" id="nc-list-section" style="display:none">
+
+      <!-- Toolbar -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+        <input id="nc-search" type="text" placeholder="Search SO#, item, description, customer…" autocomplete="off"
+          style="flex:1;min-width:220px;max-width:400px;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);background:#fff;border:1.5px solid var(--line);padding:8px 11px;border-radius:8px">
+        <div class="chart-cur-pill" id="nc-fy-btns"></div>
+        <button id="nc-export-csv" class="btn tiny">Export CSV</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <span style="font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.04em">Warehouse</span>
+        <div class="chart-cur-pill" id="nc-wh-btns"></div>
+        <span style="font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;margin-left:8px">Group by</span>
+        <select id="nc-grp1" class="nc-grp-dd">
+          <option value="none">— None —</option>
+          <option value="cust">Customer</option>
+          <option value="cls">Item Class</option>
+          <option value="inv">Item ID</option>
+          <option value="fy">FY</option>
+          <option value="sonum">SO #</option>
+          <option value="cur">Currency</option>
+          <option value="warehouse">Warehouse</option>
+          <option value="ship_via">Ship Via</option>
+        </select>
+        <span id="nc-grp-then" class="grp-then off">then by</span>
+        <select id="nc-grp2" class="nc-grp-dd" disabled>
+          <option value="">— None —</option>
+          <option value="cust">Customer</option>
+          <option value="cls">Item Class</option>
+          <option value="inv">Item ID</option>
+          <option value="fy">FY</option>
+          <option value="sonum">SO #</option>
+          <option value="cur">Currency</option>
+          <option value="warehouse">Warehouse</option>
+          <option value="ship_via">Ship Via</option>
+        </select>
+      </div>
+      <div style="font-size:12px;color:var(--mut);font-weight:600;margin-bottom:6px" id="nc-resnote"></div>
+
+      <!-- Table -->
+      <div style="overflow-x:auto;border:1.5px solid var(--line);border-radius:10px">
+        <table id="nc-tbl" style="border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:12.5px">
+          <thead>
+            <tr>
+              <th class="nc-th nc-th-icon"></th>
+              <th class="nc-th" data-k="sonum">SO #</th>
+              <th class="nc-th" data-k="date">Date</th>
+              <th class="nc-th" data-k="cust">Customer</th>
+              <th class="nc-th" data-k="inv">Item ID</th>
+              <th class="nc-th nc-desc" data-k="desc">Description</th>
+              <th class="nc-th" data-k="cls">Item Class</th>
+              <th class="nc-th" data-k="fy">FY</th>
+              <th class="nc-th" data-k="cur">Cur</th>
+              <th class="nc-th nc-num" data-k="qty">Qty</th>
+              <th class="nc-th nc-num" data-k="rev">Revenue</th>
+            </tr>
+          </thead>
+          <tbody id="nc-tbody"></tbody>
+        </table>
+      </div>
+      </div><!-- /nc-list-section -->
+    </div>
+
+    <!-- ── Exclusion Audit ─────────────────────────────────────────────────── -->
+    <div class="section-toggle-bar" style="margin-top:14px">
+      <button class="section-toggle" id="excl-audit-toggle" aria-expanded="false">
+        <span class="caret" id="excl-audit-caret">&#9658;</span> Excluded from Parts Business
+      </button>
+      <span id="excl-audit-note" style="font-size:11px;font-weight:600;color:var(--mut);margin-left:10px"></span>
+    </div>
+    <div class="collapsible-section" id="excl-audit-section" style="display:none">
+      <div class="kpis" id="excl-kpis" style="margin-bottom:12px;grid-template-columns:repeat(4,1fr)">
+        <div class="kpi"><div class="lab">Lines Excluded</div><div class="val" id="excl-k-lines">&mdash;</div></div>
+        <div class="kpi"><div class="lab">Revenue (CAD)</div><div class="val rust" id="excl-k-rev">&mdash;</div></div>
+        <div class="kpi"><div class="lab">Non-Parts WH</div><div class="val" id="excl-k-wh">&mdash;</div><div style="font-size:10px;color:var(--mut);margin-top:2px" id="excl-k-wh-sub"></div></div>
+        <div class="kpi"><div class="lab">Intercompany</div><div class="val" id="excl-k-interco">&mdash;</div><div style="font-size:10px;color:var(--mut);margin-top:2px" id="excl-k-interco-sub"></div></div>
+      </div>
+      <div style="overflow-x:auto;border:1.5px solid var(--line);border-radius:10px">
+        <table id="excl-tbl" style="border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:12px">
+          <thead id="excl-thead"></thead>
+          <tbody id="excl-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  </div><!-- /tab-nocost -->
+
+  <!-- ══ TAB 4: AI Insights ══ -->
+  <div class="tab-pane" id="tab-insights">
+    <div id="insights-container" style="padding:0"></div>
+  </div><!-- /tab-insights -->
+</div><!-- /wrap -->
+
+<script>
+// DATA, MONTHLY, FY_ORDER, BUILD_TS loaded from data.js
+const fmt0 = n => (n<0?'(':'')+'$'+Math.abs(Math.round(n)).toLocaleString()+(n<0?')':'');
+const fmtN = n => Math.round(n*100)/100===Math.round(n) ? Math.round(n).toLocaleString() : (Math.round(n*100)/100).toLocaleString();
+const fmtP = n => (n*100).toFixed(1)+'%';
+
+const el = id => document.getElementById(id);
+let state = {g1:'none', g2:'', sort:{key:null,dir:-1}, collapsed:new Set(), excludeP:true};
+
+// ── Parts Business mode ────────────────────────────────────────────────────
+let partsOnlyMode = true;
+function getActiveData(){ return partsOnlyMode ? DATA.filter(r=>!r.excl) : DATA; }
+function setPartsMode(v){
+  partsOnlyMode=v;
+  const badge=el('parts-all-badge'); if(badge) badge.style.display=v?'none':'';
+  document.querySelectorAll('#parts-mode-btns button').forEach(b=>b.classList.toggle('on',b.dataset.pm===(v?'parts':'all')));
+  render();
+  if(typeof window.renderNoCostTab==='function') window.renderNoCostTab();
+}
+(function initPartsModeToggle(){
+  const wrap=el('parts-mode-btns'); if(!wrap) return;
+  [['parts','Parts Business'],['all','All Data']].forEach(([v,label],i)=>{
+    const btn=document.createElement('button');
+    btn.className='chart-tab'+(i===0?' on':''); btn.dataset.pm=v; btn.textContent=label;
+    btn.addEventListener('click',()=>setPartsMode(v==='parts'));
+    wrap.appendChild(btn);
+  });
+})();
+
+// populate filter checkbox lists
+function uniqSorted(key){
+  const s=[...new Set(DATA.map(r=>r[key]))].filter(x=>x!==undefined&&x!=='');
+  return s.sort((a,b)=>String(a).localeCompare(String(b)));
+}
+
+const VALS = {cust:uniqSorted('cust'), fy:uniqSorted('fy'), cls:uniqSorted('cls')};
+const SEL = {cust:new Set(), fy:new Set(['FY26']), cls:new Set()};  // Default to FY26
+
+function buildChecklist(field, containerId, filterText){
+  const cont=el(containerId);
+  const ft=(filterText||'').trim().toLowerCase();
+  const vals = ft ? VALS[field].filter(v=>String(v).toLowerCase().includes(ft)) : VALS[field];
+  if(vals.length===0){ cont.innerHTML='<div class="nomatch">No matches</div>'; return; }
+  let html='';
+  for(const v of vals){
+    const checked = SEL[field].has(v) ? ' checked' : '';
+    const on = SEL[field].has(v) ? ' class="on"' : '';
+    const safe = escapeHtml(String(v));
+    html+='<label'+on+' title="'+safe+'"><input type="checkbox" value="'+safe+'"'+checked+'><span class="lbltext">'+safe+'</span></label>';
+  }
+  cont.innerHTML=html;
+  cont.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.onchange=()=>{
+      const v=cb.value;
+      if(cb.checked) SEL[field].add(v); else SEL[field].delete(v);
+      cb.closest('label').classList.toggle('on',cb.checked);
+      updateCounts();
+      state.sort={key:null,dir:-1};
+      render();
+    };
+  });
+}
+function updateCounts(){
+  el('cnt-cust').textContent = SEL.cust.size? '('+SEL.cust.size+')':'';
+  el('cnt-fy').textContent   = SEL.fy.size?   '('+SEL.fy.size+')':'';
+  el('cnt-cls').textContent  = SEL.cls.size?  '('+SEL.cls.size+')':'';
+}
+buildChecklist('cust','f-cust');
+buildChecklist('fy','f-fy');
+buildChecklist('cls','f-cls');
+updateCounts();
+
+// Populate group dropdowns from groupable columns
+function buildGroupDropdowns(){
+  const groupables=ALL_COLS.filter(c=>c.groupable);
+  const g1=el('grp1'), g2=el('grp2');
+  g1.innerHTML='<option value="none">None (detail rows)</option>'
+    + groupables.map(c=>'<option value="'+c.k+'">'+escapeHtml(c.t)+'</option>').join('');
+  g2.innerHTML='<option value="">\u2014</option>'
+    + groupables.map(c=>'<option value="'+c.k+'">'+escapeHtml(c.t)+'</option>').join('');
+}
+
+// Build the column picker
+function buildColPicker(){
+  const grid=el('colgrid');
+  grid.innerHTML=ALL_COLS.map(c=>{
+    const chk=c.vis?' checked':'';
+    return '<label data-k="'+c.k+'"><input type="checkbox" value="'+c.k+'"'+chk+'>'+escapeHtml(c.t)+'</label>';
+  }).join('');
+  grid.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.onchange=()=>{ COL_BY_K[cb.value].vis=cb.checked; render(); };
+  });
+}
+
+(function(){
+  const bi = typeof BUILD_INFO !== 'undefined' ? BUILD_INFO : {};
+  const src = bi.ar_cad && bi.ar_usd ? 'AR + SO' : 'SO only';
+  el('loadmeta').innerHTML =
+    DATA.length.toLocaleString()+' rows &middot; '
+    + VALS.cust.length+' customers &middot; '
+    + uniqSorted('inv').length+' items'
+    + (bi.generated ? ' &middot; built '+bi.generated : '');
+})();
+
+function applyFilters(){
+  const q = el('f-search').value.trim().toLowerCase();
+  const custs = SEL.cust;
+  const fys = SEL.fy;
+  const clss = SEL.cls;
+  return getActiveData().filter(r=>{
+    if(state.excludeP && String(r.inv||'').startsWith('P')) return false;
+    if(custs.size && !custs.has(r.cust)) return false;
+    if(fys.size && !fys.has(r.fy)) return false;
+    if(clss.size && !clss.has(r.cls)) return false;
+    if(q){
+      const hay=(r.desc+' '+r.inv+' '+r.cust+' '+r.cls).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+// column definitions per mode
+// Master column registry. `vis` = shown by default in detail view.
+const ALL_COLS = [
+  {k:'cust',t:'Customer',cls:'desc',vis:true,groupable:true},
+  {k:'fy',t:'FY',vis:true,groupable:true},
+  {k:'inv',t:'Item ID',vis:true,groupable:true},
+  {k:'desc',t:'Description',cls:'desc',vis:true,groupable:true},
+  {k:'cls',t:'Item Class',vis:true,groupable:true},
+  {k:'qty',t:'Qty',num:1,vis:true},
+  {k:'rev',t:'Revenue CAD',num:1,money:1,vis:true},
+  {k:'cost',t:'Cost CAD',num:1,money:1,vis:true},
+  {k:'marg',t:'Margin CAD',num:1,money:1,signed:1,vis:true},
+  {k:'mpct',t:'Margin %',num:1,pct:1,vis:true},
+  {k:'date',t:'Date',vis:true,groupable:true},
+  {k:'cur',t:'Currency',vis:true,groupable:true},
+  {k:'status',t:'Status',vis:false,groupable:true},
+];
+const COL_BY_K = Object.fromEntries(ALL_COLS.map(c=>[c.k,c]));
+function detailCols(){ return ALL_COLS.filter(c=>c.vis); }
+
+// Group labels/fields derived from groupable columns
+const GROUP_LABELS = Object.fromEntries(ALL_COLS.filter(c=>c.groupable).map(c=>[c.k,c.t]));
+const GROUP_FIELD  = Object.fromEntries(ALL_COLS.filter(c=>c.groupable).map(c=>[c.k,c.k]));
+
+// Which groupable columns (other than the active grouping fields) are ticked to display
+function extraGroupAttrs(g1,g2){
+  return ALL_COLS.filter(c=>c.groupable && c.vis && c.k!==g1 && c.k!==g2);
+}
+
+function groupCols(g1,g2){
+  const cols=[{k:'_g1',t:GROUP_LABELS[g1]||'Group',cls:'grp'}];
+  if(g2) cols.push({k:'_g2',t:GROUP_LABELS[g2]||'Sub-group',cls:'grp'});
+  extraGroupAttrs(g1,g2).forEach(c=>{
+    cols.push({k:'attr_'+c.k, t:c.t, cls:c.cls, attr:true});
+  });
+  cols.push(
+    {k:'lines',t:'Lines',num:1},
+    {k:'qty',t:'Qty',num:1},
+    {k:'rev',t:'Revenue CAD',num:1,money:1},
+    {k:'cost',t:'Cost CAD',num:1,money:1},
+    {k:'marg',t:'Margin CAD',num:1,money:1,signed:1},
+    {k:'mpct',t:'Margin %',num:1,pct:1}
+  );
+  return cols;
+}
+
+function blankAgg(extra){return Object.assign({lines:0,qty:0,rev:0,cost:0,marg:0,_attrs:{}},extra);}
+function accum(o,r,attrFields){
+  o.lines++;o.qty+=r.qty;o.rev+=r.rev;o.cost+=r.cost;o.marg+=r.marg;
+  if(attrFields){
+    for(const f of attrFields){
+      const s=o._attrs[f] || (o._attrs[f]=new Set());
+      if(s.size<2) s.add(r[f]); // only need to know "one value" vs "multiple"
+    }
+  }
+}
+// Resolve tracked attribute sets into display values on the agg row
+function finalizeAttrs(o){
+  if(!o._attrs) return;
+  for(const f in o._attrs){
+    const s=o._attrs[f];
+    o['attr_'+f] = s.size===1 ? [...s][0] : '\u2014 multiple \u2014';
+  }
+}
+
+// Single-level grouping -> flat array of group rows
+function buildGroups1(rows,g1){
+  const f1=GROUP_FIELD[g1];
+  const attrFields=extraGroupAttrs(g1,'').map(c=>c.k);
+  const map=new Map();
+  rows.forEach(r=>{
+    const k=r[f1];
+    if(!map.has(k)) map.set(k,blankAgg({_g1:k}));
+    accum(map.get(k),r,attrFields);
+  });
+  const arr=[...map.values()];
+  arr.forEach(o=>{o.mpct=o.rev?o.marg/o.rev:0; finalizeAttrs(o);});
+  return arr;
+}
+
+// Two-level grouping -> array with parent subtotal rows + child rows, flagged
+function buildGroups2(rows,g1,g2){
+  const f1=GROUP_FIELD[g1], f2=GROUP_FIELD[g2];
+  const attrFields=extraGroupAttrs(g1,g2).map(c=>c.k);
+  const parents=new Map();
+  rows.forEach(r=>{
+    const k1=r[f1];
+    if(!parents.has(k1)) parents.set(k1,{agg:blankAgg({_g1:k1}),children:new Map()});
+    const p=parents.get(k1);
+    accum(p.agg,r,attrFields);
+    const k2=r[f2];
+    if(!p.children.has(k2)) p.children.set(k2,blankAgg({_g1:k1,_g2:k2}));
+    accum(p.children.get(k2),r,attrFields);
+  });
+  parents.forEach(p=>{ finalizeAttrs(p.agg); p.children.forEach(finalizeAttrs); });
+  return parents;
+}
+
+function computeDetailExtra(rows){
+  return rows.map(r=>({...r, mpct: r.rev? r.marg/r.rev : 0}));
+}
+
+let currentRows=[], currentCols=[], currentExport=[], maxRevForBar=1;
+
+function sortGroupArr(arr,s,fallbackKey){
+  if(s.key){
+    arr.sort((a,b)=>{
+      let av=a[s.key],bv=b[s.key];
+      if(typeof av==='number'&&typeof bv==='number') return (av-bv)*s.dir;
+      return String(av).localeCompare(String(bv))*s.dir;
+    });
+  } else {
+    arr.sort((a,b)=>b.rev-a.rev);
+  }
+  return arr;
+}
+
+function render(){
+  const filtered = applyFilters();
+  const g1=state.g1, g2=state.g2;
+  const s=state.sort;
+  let cols, displayRows, exportRows, groupCount=null;
+
+  if(g1==='none'){
+    cols=detailCols();
+    let rows=computeDetailExtra(filtered);
+    if(s.key){
+      rows.sort((a,b)=>{let av=a[s.key],bv=b[s.key];
+        if(typeof av==='number'&&typeof bv==='number') return (av-bv)*s.dir;
+        return String(av==null?'':av).localeCompare(String(bv==null?'':bv))*s.dir;});
+    }
+    displayRows=rows.map(r=>({type:'detail',r}));
+    exportRows=rows;
+  } else if(!g2){
+    cols=groupCols(g1,'');
+    let arr=buildGroups1(filtered,g1);
+    sortGroupArr(arr,s);
+    groupCount=arr.length;
+    displayRows=arr.map(r=>({type:'g1',r}));
+    exportRows=arr;
+  } else {
+    cols=groupCols(g1,g2);
+    const parents=buildGroups2(filtered,g1,g2);
+    let parr=[...parents.values()].map(p=>{p.agg.mpct=p.agg.rev?p.agg.marg/p.agg.rev:0;return p;});
+    parr.sort((a,b)=>{
+      if(s.key&&s.key!=='_g2'){
+        let av=a.agg[s.key],bv=b.agg[s.key];
+        if(s.key==='_g1') return String(av).localeCompare(String(bv))*s.dir;
+        if(typeof av==='number') return (av-bv)*s.dir;
+      }
+      return b.agg.rev-a.agg.rev;
+    });
+    displayRows=[]; exportRows=[]; groupCount=0;
+    let childCount=0;
+    parr.forEach(p=>{
+      groupCount++;
+      const key=String(p.agg._g1);
+      const isCollapsed=state.collapsed.has(key);
+      let kids=[...p.children.values()];
+      kids.forEach(k=>k.mpct=k.rev?k.marg/k.rev:0);
+      if(s.key==='_g2') kids.sort((a,b)=>String(a._g2).localeCompare(String(b._g2))*s.dir);
+      else if(s.key&&s.key!=='_g1') kids.sort((a,b)=>{let av=a[s.key],bv=b[s.key];return typeof av==='number'?(av-bv)*s.dir:0;});
+      else kids.sort((a,b)=>b.rev-a.rev);
+      displayRows.push({type:'g1sub',r:p.agg,key,collapsed:isCollapsed,childN:kids.length});
+      exportRows.push(Object.assign({_g2:''},p.agg));
+      if(!isCollapsed){
+        kids.forEach(k=>{childCount++;displayRows.push({type:'g2',r:k});});
+      }
+      kids.forEach(k=>exportRows.push(k)); // export always includes children
+    });
+    state._childCount=childCount;
+  }
+
+  currentRows=displayRows; currentCols=cols; currentExport=exportRows;
+  maxRevForBar=Math.max(1,...exportRows.map(r=>Math.abs(r.rev||0)));
+
+  // KPIs — convert USD rows to CAD so the (CAD)-labelled totals are correct.
+  // Mixed-currency rows were previously summed raw (CA CAD + USA USD), understating revenue.
+  const _fx = parseFloat((el('fx-input')||{}).value) || 1.3723; // USD → CAD
+  // Total Qty = EA units only. But if the loaded data.js predates the UOM field
+  // (stale cache / old build), every row's uom is empty and the EA filter would
+  // silently zero the KPI. Detect that and fall back to summing all qty, and
+  // hide the "(EA only)" hint so the number isn't mislabelled.
+  const hasUom = filtered.some(r=>r.uom);
+  const tQty = hasUom
+    ? filtered.filter(r=>(r.uom||'').toUpperCase()==='EA').reduce((s,r)=>s+(r.qty||0),0)
+    : filtered.reduce((s,r)=>s+(r.qty||0),0);
+  const eaHint=document.getElementById('k-qty-eahint');
+  if(eaHint) eaHint.style.display = hasUom ? '' : 'none';
+  const tRev=filtered.reduce((s,r)=>s+(r.cur==='USD'? r.rev*_fx : r.rev),0);
+  const tMarg=filtered.reduce((s,r)=>s+(r.cur==='USD'? r.marg*_fx : r.marg),0);
+  // Avg Margin % is computed on COSTED lines only \u2014 lines with no cost would
+  // otherwise count as 100% margin and inflate the rate. The excluded lines are
+  // surfaced via the \u26a0 warning next to the KPI (see noCostRows below).
+  const noCostRows = filtered.filter(r=>!r.cost || r.cost===0);
+  const costedRows = filtered.filter(r=>r.cost && r.cost!==0);
+  const cRev = costedRows.reduce((s,r)=>s+(r.cur==='USD'? r.rev*_fx : r.rev),0);
+  const cMarg= costedRows.reduce((s,r)=>s+(r.cur==='USD'? r.marg*_fx : r.marg),0);
+  el('k-lines').textContent=filtered.length.toLocaleString();
+  el('k-qty').textContent=fmtN(tQty);
+  el('k-rev').textContent=fmt0(tRev);
+  el('k-marg').textContent=fmt0(tMarg);
+  el('k-mpct').textContent= cRev? fmtP(cMarg/cRev):'\u2014';
+  // Warning triangle: show only when the current filter contains no-cost lines.
+  window._noCostRows = noCostRows;
+  const warn=document.getElementById('k-nocost-warn');
+  if(warn){
+    if(noCostRows.length){
+      const ncRev=noCostRows.reduce((s,r)=>s+(r.cur==='USD'? r.rev*_fx : r.rev),0);
+      warn.style.display='';
+      warn.title=noCostRows.length+' line'+(noCostRows.length>1?'s':'')+' with no cost ('+fmt0(ncRev)+' revenue) excluded from margin %. Click to view.';
+    } else {
+      warn.style.display='none';
+    }
+  }
+  updateFilterSummary();
+  if(g1==='none'){
+    el('resnote').innerHTML='<b>'+filtered.length.toLocaleString()+'</b> detail lines';
+  } else if(!g2){
+    el('resnote').innerHTML='<b>'+groupCount.toLocaleString()+'</b> groups &middot; <b>'+filtered.length.toLocaleString()+'</b> lines';
+  } else {
+    el('resnote').innerHTML='<b>'+groupCount.toLocaleString()+'</b> &times; sub-groups &middot; <b>'+filtered.length.toLocaleString()+'</b> lines';
+  }
+  const showCollapseCtl = (g1!=='none'&&g2);
+  el('grp-collapse-ctl').style.display = showCollapseCtl ? 'inline-flex' : 'none';
+  if(showCollapseCtl){
+    const pkeys=displayRows.filter(x=>x.type==='g1sub').map(x=>x.key);
+    const allC = pkeys.length>0 && pkeys.every(k=>state.collapsed.has(k));
+    el('grp-collapse-ctl').textContent = allC ? 'Expand all' : 'Collapse all';
+  }
+
+  // head
+  const thead=el('thead');
+  thead.innerHTML='<tr>'+cols.map(c=>{
+    const arr = s.key===c.k ? '<span class="arr">'+(s.dir>0?'\u25b2':'\u25bc')+'</span>':'';
+    return '<th class="'+(c.num?'num':'')+'" data-k="'+c.k+'"'+tipAttr(colTip(c))+'>'+c.t+arr+'</th>';
+  }).join('')+'</tr>';
+  thead.querySelectorAll('th').forEach(th=>{
+    th.onclick=()=>{
+      const k=th.dataset.k;
+      if(s.key===k) s.dir=-s.dir; else {s.key=k; s.dir=(k==='_g1'||k==='_g2')?1:-1;}
+      render();
+    };
+  });
+
+  // body
+  const CAP=2500;
+  const show=displayRows.slice(0,CAP);
+  const tbody=el('tbody');
+  if(show.length===0){
+    tbody.innerHTML='<tr><td class="empty" colspan="'+cols.length+'">No rows match the current filters. Adjust or reset.</td></tr>';
+  } else {
+    let html='';
+    for(const item of show){
+      const r=item.r;
+      let trcls = item.type==='g1sub' ? ' class="subtot'+(item.collapsed?' is-collapsed':'')+'" data-key="'+escapeHtml(item.key)+'"' : (item.type==='g2'?' class="childrow"':'');
+      html+='<tr'+trcls+'>';
+      for(let ci=0;ci<cols.length;ci++){
+        const c=cols[ci];
+        let v=r[c.k];
+        if(c.k==='_g1' && item.type==='g1sub'){
+          const tw=item.collapsed?'\u25b6':'\u25bc';
+          const gVal = v===''||v==null?'(blank)':String(v);
+          const gLabel = isCustomerCol(c,g1,g2) ? customerCell(gVal) : escapeHtml(gVal);
+          html+='<td class="grp g1cell"'+tipAttr('Click to expand/collapse. Group: '+gVal+' | '+item.childN+' sub-groups')+'><span class="twist">'+tw+'</span>'
+              +gLabel
+              +' <span class="childcount">'+item.childN+'</span></td>';
+          continue;
+        }
+        if(c.k==='_g2' && item.type==='g1sub'){ html+='<td class="grp submark">\u2014 all \u2014</td>'; continue; }
+        if(c.money){
+          html+='<td class="num '+(c.signed&&v<0?'neg':(c.signed?'pos':''))+'"'+tipAttr(cellTip(c,v,r,item))+'>'+fmt0(v||0)+'</td>';
+        } else if(c.pct){
+          const w=Math.min(100,Math.abs(v)*100);
+          html+='<td class="num pct-cell"'+tipAttr(cellTip(c,v,r,item))+'><div class="bar" style="width:'+w+'%"></div><span>'+fmtP(v||0)+'</span></td>';
+        } else if(c.num){
+          html+='<td class="num"'+tipAttr(cellTip(c,v,r,item))+'>'+fmtN(v||0)+'</td>';
+        } else {
+          const cl=c.cls?(' '+c.cls):'';
+          const textVal = v===''||v==null ? '<span class="mut">\u2014</span>' : (isCustomerCol(c,g1,g2) ? customerCell(v) : escapeHtml(String(v)));
+          const tip = isCustomerCol(c,g1,g2) ? 'Click to open customer item list in a new tab' : cellTip(c,v,r,item);
+          html+='<td class="'+cl.trim()+'"'+tipAttr(tip)+'>'+textVal+'</td>';
+        }
+      }
+      html+='</tr>';
+    }
+    tbody.innerHTML=html;
+    // wire collapse clicks on parent rows
+    tbody.querySelectorAll('tr.subtot').forEach(tr=>{
+      tr.onclick=()=>{
+        const k=tr.getAttribute('data-key');
+        if(state.collapsed.has(k)) state.collapsed.delete(k); else state.collapsed.add(k);
+        render();
+      };
+    });
+    tbody.querySelectorAll('.cust-link').forEach(a=>{
+      a.onclick=(ev)=>{
+        ev.stopPropagation();
+        openCustomerDrilldown(a.getAttribute('data-cust'));
+      };
+    });
+  }
+
+  // footer
+  const tfoot=el('tfoot');
+  const sumQty=tQty,sumRev=tRev,sumMarg=tMarg;
+  const sumCost=filtered.reduce((s,r)=>s+r.cost,0);
+  const sumLines=filtered.length;
+  let fhtml='<tr>';
+  cols.forEach((c,i)=>{
+    if(i===0){ fhtml+='<td>TOTAL'+(show.length<displayRows.length?' (first '+CAP.toLocaleString()+' rows shown)':'')+'</td>'; }
+    else if(c.k==='_g2') fhtml+='<td></td>';
+    else if(c.k==='lines') fhtml+='<td class="num">'+sumLines.toLocaleString()+'</td>';
+    else if(c.k==='qty') fhtml+='<td class="num">'+fmtN(sumQty)+'</td>';
+    else if(c.k==='rev') fhtml+='<td class="num">'+fmt0(sumRev)+'</td>';
+    else if(c.k==='cost') fhtml+='<td class="num">'+fmt0(sumCost)+'</td>';
+    else if(c.k==='marg') fhtml+='<td class="num">'+fmt0(sumMarg)+'</td>';
+    else if(c.k==='mpct') fhtml+='<td class="num">'+(sumRev?fmtP(sumMarg/sumRev):'\u2014')+'</td>';
+    else fhtml+='<td></td>';
+  });
+  fhtml+='</tr>';
+  tfoot.innerHTML=fhtml;
+}
+
+// ── Monthly Report: Year Selector ──
+// The summary "Year" dropdown is a single-select proxy for the Parts Explorer
+// FY checklist (SEL.fy) — there is ONE source of truth for fiscal-year
+// filtering. Selecting a year drives the KPIs/table; "All Years" clears it.
+// (Previously this added a SECOND, independent FY filter that intersected with
+//  SEL.fy's FY26 default, so any prior year resolved to zero rows.)
+let monthlySelectedFY = '';  // Track selected FY (mirrors SEL.fy)
+
+function applySummaryYear(fy){
+  monthlySelectedFY = fy || '';
+  SEL.fy.clear();
+  if(monthlySelectedFY) SEL.fy.add(monthlySelectedFY);
+  buildChecklist('fy','f-fy');   // keep the explorer checklist UI in sync
+  updateCounts();
+}
+
+function updateMonthlyYear(fy){
+  applySummaryYear(fy);
+  state.sort={key:null,dir:-1};
+  render();
+}
+
+// Initialize year selector as pill buttons
+function initYearSelector(){
+  const wrap = document.getElementById('summary-fy-btns');
+  if(!wrap) return;
+
+  const fys = [...new Set(DATA.map(r=>r.fy))].sort();
+
+  function setActive(val){
+    wrap.querySelectorAll('button').forEach(b=>{
+      b.classList.toggle('on', b.dataset.fy === val);
+    });
+  }
+
+  // "All" button
+  const allBtn = document.createElement('button');
+  allBtn.className = 'chart-tab';
+  allBtn.dataset.fy = '';
+  allBtn.textContent = 'All';
+  allBtn.addEventListener('click', ()=>{ setActive(''); updateMonthlyYear(''); });
+  wrap.appendChild(allBtn);
+
+  fys.forEach(fy => {
+    const btn = document.createElement('button');
+    btn.className = 'chart-tab';
+    btn.dataset.fy = fy;
+    btn.textContent = fy;
+    btn.addEventListener('click', ()=>{ setActive(fy); updateMonthlyYear(fy); });
+    wrap.appendChild(btn);
+  });
+
+  // Default to latest FY
+  const latestFY = fys.length ? fys[fys.length-1] : '';
+  setActive(latestFY);
+  applySummaryYear(latestFY);
+}
+
+function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function escapeAttr(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function tipAttr(s){return s==null||s===''?'':' data-tip="'+escapeAttr(s)+'" title="'+escapeAttr(s)+'"';}
+function colTip(c){
+  const tips={cust:'Customer account / mill location',fy:'Fiscal year',inv:'Item ID / inventory code',desc:'Full item description',cls:'Item class / product family',qty:'Quantity sold',rev:'Revenue in source currency',cost:'Cost in source currency',marg:'Revenue less cost',mpct:'Margin divided by revenue',cur:'Transaction currency',date:'Sales order / invoice date',status:'Line status',lines:'Number of sales/order lines'};
+  return tips[c.k]||c.t||'';
+}
+function cellTip(c,v,r,item){
+  if(c.money) return c.t+': '+fmt0(v||0);
+  if(c.pct) return c.t+': '+fmtP(v||0);
+  if(c.num) return c.t+': '+fmtN(v||0);
+  if(c.k==='_g1') return 'Group: '+(v==null||v===''?'(blank)':String(v));
+  if(c.k==='_g2') return 'Sub-group: '+(v==null||v===''?'(blank)':String(v));
+  return (v==null||v==='')?'':String(v);
+}
+
+function isCustomerCol(c,g1,g2){
+  return c.k==='cust' || c.k==='attr_cust' || (c.k==='_g1' && g1==='cust') || (c.k==='_g2' && g2==='cust');
+}
+function customerCell(v,label){
+  const name = v===''||v==null ? '(blank)' : String(v);
+  return '<span class="cust-link" data-cust="'+escapeAttr(name)+'" title="Open customer item list in a new tab">'+escapeHtml(name)+'</span><span class="drill-hint">open</span>';
+}
+function customerSummaryRows(customer){
+  const name = customer==='(blank)' ? '' : customer;
+  const rows = getActiveData().filter(r=>String(r.cust||'')===String(name));
+  const map = new Map();
+  rows.forEach(r=>{
+    const key=(r.inv||'')+'||'+(r.desc||'')+'||'+(r.cls||'')+'||'+(r.cur||'');
+    if(!map.has(key)) map.set(key,{inv:r.inv,desc:r.desc,cls:r.cls,cur:r.cur,lines:0,qty:0,rev:0,cost:0,marg:0,first:r.date,last:r.date});
+    const o=map.get(key);
+    o.lines++; o.qty+=r.qty||0; o.rev+=r.rev||0; o.cost+=r.cost||0; o.marg+=r.marg||0;
+    if(r.date<o.first) o.first=r.date; if(r.date>o.last) o.last=r.date;
+  });
+  const items=[...map.values()].map(o=>({...o,mpct:o.rev?o.marg/o.rev:0})).sort((a,b)=>b.rev-a.rev);
+  const totals={lines:rows.length, qty:rows.reduce((s,r)=>s+(r.qty||0),0), rev:rows.reduce((s,r)=>s+(r.rev||0),0), cost:rows.reduce((s,r)=>s+(r.cost||0),0), marg:rows.reduce((s,r)=>s+(r.marg||0),0)};
+  totals.mpct = totals.rev ? totals.marg/totals.rev : 0;
+  return {rows,items,totals};
+}
+// ── Modal drill-down state ──
+let drillItems=[], drillSortKey=null, drillSortDir=-1;
+
+function drillRender(){
+  const q=el('drill-search').value.toLowerCase();
+  let rows=drillItems.filter(o=>!q||(o.inv+'|'+o.desc+'|'+o.cls).toLowerCase().includes(q));
+  if(drillSortKey){
+    const k=drillSortKey, dir=drillSortDir;
+    rows=rows.slice().sort((a,b)=>typeof a[k]==='string'?dir*a[k].localeCompare(b[k]):dir*(a[k]-b[k]));
+  }
+  el('drill-resnote').textContent=rows.length+' of '+drillItems.length+' items';
+  el('drill-tbody').innerHTML=rows.length ? rows.map(o=>'<tr>'+
+    '<td>'+escapeHtml(o.inv)+'</td><td class="desc">'+escapeHtml(o.desc)+'</td><td>'+escapeHtml(o.cls)+'</td><td>'+escapeHtml(o.cur)+'</td>'+
+    '<td class="num">'+o.lines.toLocaleString()+'</td><td class="num">'+fmtN(o.qty)+'</td>'+
+    '<td class="num">'+fmt0(o.rev)+'</td><td class="num">'+fmt0(o.cost)+'</td>'+
+    '<td class="num">'+(o.marg<0?'<span class="neg">':'')+fmt0(o.marg)+(o.marg<0?'</span>':'')+'</td>'+
+    '<td class="num">'+(o.mpct<0?'<span class="neg">':'')+fmtP(o.mpct)+(o.mpct<0?'</span>':'')+'</td>'+
+    '<td>'+escapeHtml(o.first)+'</td><td>'+escapeHtml(o.last)+'</td></tr>').join('')
+    : '<tr><td colspan="12" class="drill-empty">No matching items</td></tr>';
+  document.querySelectorAll('#drill-tbl thead th').forEach(th=>{
+    const k=th.getAttribute('data-k');
+    th.querySelector('.arr').textContent=k&&k===drillSortKey?(drillSortDir===1?'▲':'▼'):'';
+  });
+}
+
+function openCustomerDrilldown(customer){
+  const d=customerSummaryRows(customer);
+  drillItems=d.items.map(o=>({...o,inv:o.inv||'',desc:o.desc||'',cls:o.cls||'',cur:o.cur||'',first:o.first||'',last:o.last||''}));
+  drillSortKey=null; drillSortDir=-1;
+  el('drill-title').textContent=customer;
+  el('drill-kpis').innerHTML=[
+    ['Lines',d.totals.lines.toLocaleString()],['Unique Items',d.items.length.toLocaleString()],
+    ['Qty',fmtN(d.totals.qty)],['Revenue',fmt0(d.totals.rev)],
+    ['Margin',fmt0(d.totals.marg)],['Margin %',d.totals.rev?fmtP(d.totals.mpct):'—']
+  ].map(x=>'<div class="drill-kpi"><div class="lab">'+x[0]+'</div><div class="val">'+x[1]+'</div></div>').join('');
+  el('drill-search').value='';
+  drillRender();
+  el('drill-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  setTimeout(()=>el('drill-search').focus(),50);
+}
+
+// Modal close
+function closeDrillModal(){
+  el('drill-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+el('drill-close').addEventListener('click',closeDrillModal);
+el('drill-overlay').addEventListener('click',e=>{ if(e.target===el('drill-overlay')) closeDrillModal(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrillModal(); });
+
+// Modal filter + sort
+el('drill-search').addEventListener('input',()=>{ drillSortKey=null; drillSortDir=-1; drillRender(); });
+document.querySelectorAll('#drill-tbl thead th[data-k]').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const k=th.getAttribute('data-k');
+    if(drillSortKey===k){ drillSortDir*=-1; }
+    else { drillSortKey=k; drillSortDir=['inv','desc','cls','cur','first','last'].includes(k)?1:-1; }
+    drillRender();
+  });
+});
+el('drill-copy').addEventListener('click',()=>navigator.clipboard.writeText(el('drill-tbl').innerText).then(()=>alert('Copied')));
+el('drill-print').addEventListener('click',()=>window.print());
+
+// ── No-cost lines modal (Avg Margin % exclusions) ──
+let nocostSortKey='rev', nocostSortDir=-1;
+function nocostRender(){
+  const fx = parseFloat((el('fx-input')||{}).value) || 1.3723;
+  const q = (el('nocost-search').value||'').trim().toLowerCase();
+  let rows = (window._noCostRows||[]).slice();
+  if(q){
+    rows = rows.filter(r=>((r.inv||'')+' '+(r.desc||'')+' '+(r.cust||'')+' '+(r.cls||'')).toLowerCase().includes(q));
+  }
+  const textKeys=['inv','desc','cust','cls','fy','cur','date'];
+  rows.sort((a,b)=>{
+    let av=a[nocostSortKey], bv=b[nocostSortKey];
+    if(textKeys.includes(nocostSortKey)) return String(av==null?'':av).localeCompare(String(bv==null?'':bv))*nocostSortDir;
+    return ((av||0)-(bv||0))*nocostSortDir;
+  });
+  const revCAD = rows.reduce((s,r)=>s+(r.cur==='USD'? r.rev*fx : r.rev),0);
+  el('nocost-kpis').innerHTML =
+    '<div class="drill-kpi"><div class="lab">No-cost lines</div><div class="val">'+rows.length.toLocaleString()+'</div></div>'+
+    '<div class="drill-kpi"><div class="lab">Revenue (CAD)</div><div class="val">'+fmt0(revCAD)+'</div></div>'+
+    '<div class="drill-kpi"><div class="lab">Distinct items</div><div class="val">'+(new Set(rows.map(r=>r.inv))).size.toLocaleString()+'</div></div>';
+  el('nocost-resnote').textContent = rows.length.toLocaleString()+' line'+(rows.length===1?'':'s');
+  el('nocost-tbody').innerHTML = rows.map(r=>
+    '<tr>'+
+    '<td>'+escapeHtml(r.inv||'')+'</td>'+
+    '<td class="desc">'+escapeHtml(r.desc||'')+'</td>'+
+    '<td>'+escapeHtml(r.cust||'')+'</td>'+
+    '<td>'+escapeHtml(r.cls||'')+'</td>'+
+    '<td>'+escapeHtml(r.fy||'')+'</td>'+
+    '<td>'+escapeHtml(r.cur||'')+'</td>'+
+    '<td class="num">'+fmtN(r.qty||0)+'</td>'+
+    '<td class="num">'+fmt0(r.rev||0)+'</td>'+
+    '<td>'+escapeHtml(r.date||'')+'</td>'+
+    '</tr>'
+  ).join('') || '<tr><td colspan="9" style="padding:18px;text-align:center;color:var(--mut)">No lines</td></tr>';
+}
+function openNoCostModal(){
+  nocostSortKey='rev'; nocostSortDir=-1;
+  el('nocost-search').value='';
+  nocostRender();
+  el('nocost-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeNoCostModal(){
+  el('nocost-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+(function wireNoCost(){
+  const warn=el('k-nocost-warn');
+  if(warn){
+    warn.addEventListener('click',openNoCostModal);
+    warn.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openNoCostModal(); } });
+  }
+  el('nocost-close').addEventListener('click',closeNoCostModal);
+  el('nocost-overlay').addEventListener('click',e=>{ if(e.target===el('nocost-overlay')) closeNoCostModal(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeNoCostModal(); });
+  el('nocost-search').addEventListener('input',nocostRender);
+  document.querySelectorAll('#nocost-tbl thead th[data-k]').forEach(th=>{
+    th.addEventListener('click',()=>{
+      const k=th.getAttribute('data-k');
+      if(nocostSortKey===k){ nocostSortDir*=-1; }
+      else { nocostSortKey=k; nocostSortDir=['inv','desc','cust','cls','fy','cur','date'].includes(k)?1:-1; }
+      nocostRender();
+    });
+  });
+})();
+
+// ── Collapsible section toggles ──
+function makeToggle(btnId, caretId, sectionId){
+  const btn=el(btnId), caret=el(caretId), sec=el(sectionId);
+  sec.style.maxHeight=sec.scrollHeight+'px';
+  btn.addEventListener('click',()=>{
+    const collapsed=sec.classList.toggle('collapsed');
+    btn.classList.toggle('collapsed', collapsed);
+    btn.setAttribute('aria-expanded', String(!collapsed));
+    if(!collapsed) sec.style.maxHeight=sec.scrollHeight+'px';
+  });
+}
+makeToggle('kpi-toggle','kpi-caret','kpi-section');
+makeToggle('topcust-toggle','topcust-caret','topcust-section');
+
+// ── Top Customers tables ──
+let renderYearPanel, renderPeriodPanel;
+(function buildTopCustomers(){
+  // FY quarters: Q1=Jul-Sep, Q2=Oct-Dec, Q3=Jan-Mar, Q4=Apr-Jun
+  const FY_MONTHS = ['07','08','09','10','11','12','01','02','03','04','05','06'];
+  const QTR_MONTHS = { Q1:['07','08','09'], Q2:['10','11','12'], Q3:['01','02','03'], Q4:['04','05','06'] };
+  const MONTH_NAMES = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'};
+
+  // Derive all FYs present in data, sorted desc
+  const ALL_FYS=[...new Set(DATA.map(r=>r.fy||'').filter(Boolean))].sort().reverse();
+  // Derive months present per FY: { 'FY26': Set of 'YYYY-MM', … }
+  const FY_MONTH_MAP={};
+  DATA.forEach(r=>{ if(r.fy&&r.date){ (FY_MONTH_MAP[r.fy]||(FY_MONTH_MAP[r.fy]=new Set())).add(String(r.date).slice(0,7)); } });
+
+  // Shared currency state (drives both panels)
+  let sharedCur=null; // null=All, 'CAD', 'USD'
+
+  // Returns {allRows (sorted, no slice), totalRev}
+  function topCusts(filterFn){
+    const map=new Map();
+    let totalRev=0;
+    DATA.forEach(r=>{
+      if(state.excludeP && String(r.inv||'').startsWith('P')) return;
+      if(!filterFn(r)) return;
+      if(sharedCur && r.cur!==sharedCur) return;
+      totalRev+=r.rev||0;
+      const c=r.cust||'(blank)';
+      if(!map.has(c)) map.set(c,{rev:0,marg:0,lines:0});
+      const o=map.get(c); o.rev+=r.rev||0; o.marg+=r.marg||0; o.lines++;
+    });
+    const allRows=[...map.entries()].map(([c,o])=>({cust:c,...o,mpct:o.rev?o.marg/o.rev:0}))
+      .sort((a,b)=>b.rev-a.rev);
+    return {allRows, totalRev};
+  }
+
+  function renderTopTable(tableId, totalId, footerId, data, n, setN, periodLabel){
+    const {allRows, totalRev}=data;
+    const curLabel=sharedCur||'CAD+USD';
+    const rows=allRows.slice(0,n);
+
+    // Total revenue bar
+    el(totalId).innerHTML='<span>Total Revenue <span class="tot-cur">('+curLabel+')</span></span>'
+      +'<span class="tot-val">'+fmt0(totalRev)+'</span>';
+
+    // Table
+    const t=el(tableId);
+    t.innerHTML='<thead><tr><th class="rank">#</th><th>Customer</th><th class="num">Revenue</th><th class="num">Margin %</th></tr></thead>'+
+      '<tbody>'+( rows.length
+        ? rows.map((r,i)=>{
+            const pct=totalRev?((r.rev/totalRev)*100).toFixed(1)+'% of '+periodLabel+' total':'';
+            return '<tr data-cust="'+escapeAttr(r.cust)+'">'+
+              '<td class="rank">'+(i+1)+'</td>'+
+              '<td>'+escapeHtml(r.cust)+'<span class="tc-tip">'+pct+'</span></td>'+
+              '<td class="num">'+fmt0(r.rev)+'</td>'+
+              '<td class="num '+(r.mpct<0?'neg':'pos')+'">'+fmtP(r.mpct)+'</td>'+
+            '</tr>';
+          }).join('')
+        : '<tr><td colspan="4" class="drill-empty">No data for this period</td></tr>'
+      )+'</tbody>';
+    t.querySelectorAll('tbody tr[data-cust]').forEach(row=>{
+      row.addEventListener('click',()=>openCustomerDrilldown(row.getAttribute('data-cust')));
+    });
+
+    // Footer: % of total + show more/less
+    const topRev=rows.reduce((s,r)=>s+r.rev,0);
+    const topPct=totalRev?(topRev/totalRev*100).toFixed(1):'—';
+    const canMore=allRows.length>n, canLess=n>5;
+    const steps=[5,10,15];
+    const nextMore=steps.find(s=>s>n)||null;
+    const nextLess=steps.slice().reverse().find(s=>s<n)||5;
+    el(footerId).innerHTML=
+      '<span class="pct-summary">Top '+n+' = <b>'+topPct+'%</b> of '+periodLabel+' revenue</span>'+
+      '<span style="display:flex;gap:6px">'+
+        (canLess?'<button class="show-more" data-sn="'+nextLess+'">Show fewer</button>':'')+
+        (canMore?'<button class="show-more" data-sn="'+nextMore+'">Show more</button>':'')+
+      '</span>';
+    el(footerId).querySelectorAll('[data-sn]').forEach(btn=>{
+      btn.addEventListener('click',()=>setN(+btn.getAttribute('data-sn')));
+    });
+  }
+
+  // ── YEAR PANEL ──
+  let selFYs=new Set(['FY26']), yearN=5;
+
+  renderYearPanel=function(){
+    const ctrl=el('topcust-year-controls');
+    ctrl.innerHTML=ALL_FYS.map(fy=>'<button class="tc-chip'+(selFYs.has(fy)?' on':'')+'" data-fy="'+fy+'">'+fy+'</button>').join('');
+    ctrl.querySelectorAll('[data-fy]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const fy=btn.getAttribute('data-fy');
+        if(selFYs.has(fy)){ if(selFYs.size>1) selFYs.delete(fy); }
+        else selFYs.add(fy);
+        renderYearPanel();
+      });
+    });
+    const label=[...selFYs].sort().join('+');
+    el('topcust-year-head').textContent='Top Customers — '+label+(sharedCur?' ('+sharedCur+')':'');
+    const data=topCusts(r=>selFYs.has(r.fy));
+    renderTopTable('topcust-year','topcust-year-total','topcust-year-footer', data, yearN, n=>{yearN=n;renderYearPanel();}, label);
+    refreshHeight();
+  }
+
+  // ── MONTH/PERIOD PANEL ──
+  let periodFY='FY26', selQtrs=new Set(), selMonths=new Set(), periodN=5;
+
+  function fyMonths(fy){
+    const present=FY_MONTH_MAP[fy]||new Set();
+    return FY_MONTHS.filter(m=>[...present].some(ym=>ym.endsWith('-'+m)));
+  }
+
+  renderPeriodPanel=function(){
+    const ctrl=el('topcust-month-controls');
+    const months=fyMonths(periodFY);
+    let html='<select id="period-fy-sel">'+ALL_FYS.map(fy=>'<option'+(fy===periodFY?' selected':'')+'>'+fy+'</option>').join('')+'</select>';
+    html+='<div class="tc-divider"></div>';
+    ['Q1','Q2','Q3','Q4'].forEach(q=>{
+      html+='<button class="tc-chip qtr'+(selQtrs.has(q)?' on':'')+'" data-q="'+q+'">'+q+'</button>';
+    });
+    html+='<div class="tc-divider"></div>';
+    months.forEach(m=>{
+      html+='<button class="tc-chip'+(selMonths.has(m)?' on':'')+'" data-m="'+m+'">'+MONTH_NAMES[m]+'</button>';
+    });
+    ctrl.innerHTML=html;
+
+    ctrl.querySelector('#period-fy-sel').addEventListener('change',e=>{
+      periodFY=e.target.value; selQtrs.clear(); selMonths.clear(); renderPeriodPanel();
+    });
+    ctrl.querySelectorAll('[data-q]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const q=btn.getAttribute('data-q');
+        if(selQtrs.has(q)) selQtrs.delete(q);
+        else { selQtrs.add(q); QTR_MONTHS[q].forEach(m=>selMonths.delete(m)); }
+        renderPeriodPanel();
+      });
+    });
+    ctrl.querySelectorAll('[data-m]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const m=btn.getAttribute('data-m');
+        Object.entries(QTR_MONTHS).forEach(([q,ms])=>{ if(ms.includes(m)) selQtrs.delete(q); });
+        if(selMonths.has(m)) selMonths.delete(m); else selMonths.add(m);
+        renderPeriodPanel();
+      });
+    });
+
+    const activeMs=new Set([...selMonths]);
+    selQtrs.forEach(q=>QTR_MONTHS[q].forEach(m=>activeMs.add(m)));
+
+    const data=topCusts(r=>{
+      if(r.fy!==periodFY) return false;
+      if(activeMs.size===0) return true;
+      return activeMs.has(r.date?String(r.date).slice(5,7):'');
+    });
+
+    let label=periodFY;
+    if(selQtrs.size||selMonths.size){
+      const parts=[...[...selQtrs].sort(),...[...selMonths].sort().map(m=>MONTH_NAMES[m])];
+      label+=': '+parts.join(', ');
+    }
+    el('topcust-month-head').textContent='Top Customers — '+label+(sharedCur?' ('+sharedCur+')':'');
+    renderTopTable('topcust-month','topcust-month-total','topcust-month-footer', data, periodN, n=>{periodN=n;renderPeriodPanel();}, label);
+    refreshHeight();
+  }
+
+  // Shared currency switch
+  document.querySelectorAll('#tc-cur-group [data-gcur]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      sharedCur=btn.getAttribute('data-gcur')||null;
+      document.querySelectorAll('#tc-cur-group [data-gcur]').forEach(b=>b.classList.toggle('on',b===btn));
+      // update CAD/USD chip colour class
+      document.querySelectorAll('#tc-cur-group .cur-cad, #tc-cur-group .cur-usd').forEach(b=>{
+        b.classList.toggle('on', b===btn);
+      });
+      renderYearPanel();
+      renderPeriodPanel();
+    });
+  });
+
+  function refreshHeight(){
+    const sec=el('topcust-section');
+    if(!sec.classList.contains('collapsed')) sec.style.maxHeight=sec.scrollHeight+'px';
+  }
+
+  renderYearPanel();
+  renderPeriodPanel();
+  el('kpi-section').style.maxHeight=el('kpi-section').scrollHeight+'px';
+  el('topcust-section').style.maxHeight=el('topcust-section').scrollHeight+'px';
+})();
+
+// P-items toggle
+el('p-toggle-wrap').addEventListener('click',()=>{
+  state.excludeP=!state.excludeP;
+  el('p-toggle-wrap').classList.toggle('on',state.excludeP);
+  render();
+  renderYearPanel();
+  renderPeriodPanel();
+});
+
+// events
+el('f-search').addEventListener('input',()=>{state.sort={key:null,dir:-1};render();});
+el('flt-cust').addEventListener('input',()=>buildChecklist('cust','f-cust',el('flt-cust').value));
+el('flt-cls').addEventListener('input',()=>buildChecklist('cls','f-cls',el('flt-cls').value));
+
+function syncGrp2(){
+  const g1=el('grp1').value;
+  const g2sel=el('grp2');
+  if(g1==='none'){
+    g2sel.disabled=true; g2sel.value=''; el('grp-then').classList.add('off');
+  } else {
+    g2sel.disabled=false; el('grp-then').classList.remove('off');
+  }
+  // prevent picking the same field twice
+  [...g2sel.options].forEach(o=>{ o.disabled = (o.value!=='' && o.value===g1); });
+  if(g2sel.value===g1) g2sel.value='';
+}
+el('grp1').addEventListener('change',()=>{
+  state.g1=el('grp1').value;
+  syncGrp2();
+  state.g2=el('grp2').value;
+  state.sort={key:null,dir:-1};
+  state.collapsed.clear();
+  render();
+});
+el('grp2').addEventListener('change',()=>{
+  state.g2=el('grp2').value;
+  state.sort={key:null,dir:-1};
+  state.collapsed.clear();
+  render();
+});
+// Collapse/expand all groups (two-level view)
+el('grp-collapse-ctl').onclick=()=>{
+  // determine current parent keys
+  const parents=new Set(currentRows.filter(x=>x.type==='g1sub').map(x=>x.key));
+  const allCollapsed = parents.size>0 && [...parents].every(k=>state.collapsed.has(k));
+  if(allCollapsed){ state.collapsed.clear(); el('grp-collapse-ctl').textContent='Collapse all'; }
+  else { parents.forEach(k=>state.collapsed.add(k)); el('grp-collapse-ctl').textContent='Expand all'; }
+  render();
+};
+// Columns panel toggle
+el('btn-columns').onclick=()=>{
+  const p=el('colpanel');
+  p.style.display = p.style.display==='none' ? 'block' : 'none';
+};
+el('col-all').onclick=()=>{ ALL_COLS.forEach(c=>c.vis=true); buildColPicker(); render(); };
+el('col-none').onclick=()=>{ ALL_COLS.forEach(c=>c.vis = !!(c.num||c.money||c.pct||c.k==='cust')); buildColPicker(); render(); };
+el('btn-reset').onclick=()=>{
+  el('f-search').value='';
+  el('flt-cust').value=''; el('flt-cls').value='';
+  SEL.cust.clear(); SEL.fy.clear(); SEL.cls.clear();
+  buildChecklist('cust','f-cust'); buildChecklist('fy','f-fy'); buildChecklist('cls','f-cls');
+  updateCounts();
+  el('grp1').value='none'; el('grp2').value='';
+  state.g1='none'; state.g2=''; state.sort={key:null,dir:-1}; state.collapsed.clear();
+  syncGrp2();
+  render();
+};
+el('btn-csv').onclick=()=>{
+  const cols=currentCols, rows=currentExport;
+  const head=cols.map(c=>c.t).join(',');
+  const lines=rows.map(r=>cols.map(c=>{
+    let v=r[c.k];
+    if(c.pct) v=((v||0)*100).toFixed(2)+'%';
+    else if(typeof v==='number') v=Math.round(v*100)/100;
+    v=(v==null?'':String(v));
+    return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;
+  }).join(',')).join('\n');
+  const blob=new Blob([head+'\n'+lines],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const tag = state.g1==='none' ? 'detail' : (state.g2? state.g1+'_by_'+state.g2 : state.g1);
+  a.download='parts_sales_'+tag+'.csv';
+  a.click();
+};
+
+// ---- PDF export via print window ----
+function describeFilters(){
+  const parts=[];
+  const q=el('f-search').value.trim();
+  if(q) parts.push('Search: \u201c'+q+'\u201d');
+  if(SEL.cust.size) parts.push('Customer: '+[...SEL.cust].join(', '));
+  if(SEL.fy.size) parts.push('Year: '+[...SEL.fy].sort().join(', '));
+  if(SEL.cls.size) parts.push('Item Class: '+[...SEL.cls].join(', '));
+  if(state.g1!=='none'){
+    const L={cust:'Customer',fy:'Year',inv:'Item',cls:'Item Class'};
+    parts.push('Grouped by: '+L[state.g1]+(state.g2?(' \u2192 '+L[state.g2]):''));
+  }
+  return parts.length? parts : ['No filters applied \u2014 all rows'];
+}
+
+function activeFilterCount(){
+  let n=0;
+  if(el('f-search').value.trim()) n++;
+  n += SEL.cust.size?1:0;
+  n += SEL.fy.size?1:0;
+  n += SEL.cls.size?1:0;
+  return n;
+}
+function updateFilterSummary(){
+  const bits=[];
+  const q=el('f-search').value.trim();
+  if(q) bits.push('search \u201c'+escapeHtml(q.length>22?q.slice(0,22)+'\u2026':q)+'\u201d');
+  if(SEL.fy.size) bits.push([...SEL.fy].sort().join('/'));
+  if(SEL.cust.size) bits.push('<b>'+SEL.cust.size+'</b> customer'+(SEL.cust.size>1?'s':''));
+  if(SEL.cls.size) bits.push('<b>'+SEL.cls.size+'</b> class'+(SEL.cls.size>1?'es':''));
+  const sum=el('active-summary');
+  const collapsed=el('controls').classList.contains('collapsed');
+  if(bits.length===0){
+    sum.innerHTML = collapsed ? '<span style="opacity:.7">none active \u2014 showing all rows</span>' : '';
+  } else {
+    sum.innerHTML = (collapsed?'':'\u2014 ') + bits.join(' &middot; ');
+  }
+}
+function setCollapsed(c){
+  el('controls').classList.toggle('collapsed',c);
+  el('filter-toggle').classList.toggle('collapsed',c);
+  el('filter-toggle').setAttribute('aria-expanded', String(!c));
+  updateFilterSummary();
+}
+el('filter-toggle').onclick=()=>{
+  setCollapsed(!el('controls').classList.contains('collapsed'));
+};
+el('btn-clearfilters').onclick=(e)=>{
+  e.stopPropagation();
+  el('f-search').value='';
+  el('flt-cust').value=''; el('flt-cls').value='';
+  SEL.cust.clear(); SEL.fy.clear(); SEL.cls.clear();
+  buildChecklist('cust','f-cust'); buildChecklist('fy','f-fy'); buildChecklist('cls','f-cls');
+  updateCounts();
+  state.sort={key:null,dir:-1};
+  render();
+};
+el('btn-pdf').onclick=()=>{
+  const cols=currentCols, rows=currentExport;
+  const filtered=applyFilters();
+  const tQty=filtered.reduce((s,r)=>s+r.qty,0);
+  const tRev=filtered.reduce((s,r)=>s+r.rev,0);
+  const tCost=filtered.reduce((s,r)=>s+r.cost,0);
+  const tMarg=filtered.reduce((s,r)=>s+r.marg,0);
+
+  let body='';
+  for(const r of rows){
+    const isSub = (state.g2 && (r._g2===''||r._g2==null) && r._g1!=null);
+    body+='<tr'+(isSub?' class="sub"':'')+'>';
+    for(const c of cols){
+      let v=r[c.k]; let cls=c.num?'num':'';
+      if(c.k==='_g2'&&isSub){ body+='<td>\u2014 all \u2014</td>'; continue; }
+      if(c.money) v=fmt0(v||0);
+      else if(c.pct) v=fmtP(v||0);
+      else if(c.num) v=fmtN(v||0);
+      else v=(v==null||v==='')?'':String(v);
+      body+='<td class="'+cls+'">'+escapeHtml(String(v))+'</td>';
+    }
+    body+='</tr>';
+  }
+  const head='<tr>'+cols.map(c=>'<th class="'+(c.num?'num':'')+'">'+c.t+'</th>').join('')+'</tr>';
+  // footer
+  let foot='<tr>';
+  cols.forEach((c,i)=>{
+    if(i===0) foot+='<td>TOTAL</td>';
+    else if(c.k==='_g2') foot+='<td></td>';
+    else if(c.k==='lines') foot+='<td class="num">'+filtered.length.toLocaleString()+'</td>';
+    else if(c.k==='qty') foot+='<td class="num">'+fmtN(tQty)+'</td>';
+    else if(c.k==='rev') foot+='<td class="num">'+fmt0(tRev)+'</td>';
+    else if(c.k==='cost') foot+='<td class="num">'+fmt0(tCost)+'</td>';
+    else if(c.k==='marg') foot+='<td class="num">'+fmt0(tMarg)+'</td>';
+    else if(c.k==='mpct') foot+='<td class="num">'+(tRev?fmtP(tMarg/tRev):'')+'</td>';
+    else foot+='<td></td>';
+  });
+  foot+='</tr>';
+
+  const kpis=[
+    ['Lines',filtered.length.toLocaleString()],
+    ['Total Qty',fmtN(tQty)],
+    ['Revenue CAD',fmt0(tRev)],
+    ['Margin CAD',fmt0(tMarg)],
+    ['Avg Margin %',tRev?fmtP(tMarg/tRev):'\u2014'],
+  ].map(k=>'<div class="pk"><div class="pl">'+k[0]+'</div><div class="pv">'+k[1]+'</div></div>').join('');
+
+  const now=new Date();
+  const stamp=now.toLocaleString();
+  const w=window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Parts Sales Explorer \u2014 June 15</title>'
+   +'<style>'
+   +'*{box-sizing:border-box;margin:0;padding:0}'
+   +'body{font-family:"Nunito","Segoe UI",system-ui,sans-serif;color:#1c1a17;padding:28px;font-size:10px}'
+   +'h1{font-size:20px;font-weight:800;letter-spacing:-.3px}'
+   +'.meta{font-size:10px;color:#7a7264;margin-top:3px;font-weight:600}'
+   +'.flt{margin:12px 0;font-size:10px;font-weight:600;line-height:1.5}'
+   +'.flt b{color:#a8482a}'
+   +'.kp-row{display:flex;gap:1px;background:#d8d1c2;border:1px solid #d8d1c2;border-radius:8px;overflow:hidden;margin:12px 0 16px}'
+   +'.pk{background:#fbf9f4;padding:8px 12px;flex:1}'
+   +'.pl{font-size:8px;text-transform:uppercase;color:#7a7264;font-weight:700;letter-spacing:.04em}'
+   +'.pv{font-size:15px;font-weight:800;margin-top:2px}'
+   +'table{border-collapse:collapse;width:100%}'
+   +'th{background:#1c1a17;color:#f3efe7;font-size:8.5px;text-transform:uppercase;letter-spacing:.03em;'
+     +'padding:6px 7px;text-align:left;font-weight:700}'
+   +'th.num,td.num{text-align:right}'
+   +'td{padding:4px 7px;border-bottom:1px solid #e6e0d4;font-weight:600;font-size:9px}'
+   +'tr.sub td{background:#ece6d8;font-weight:800}'
+   +'tfoot td{background:#1c1a17;color:#f3efe7;font-weight:800;font-size:9.5px}'
+   +'thead{display:table-header-group}'
+   +'@page{size:landscape;margin:12mm}'
+   +'</style></head><body>'
+   +'<h1>Parts Sales Explorer</h1>'
+   +'<div class="meta">June 15 &middot; USCASO\u2019s datasheet &middot; generated '+stamp+'</div>'
+   +'<div class="flt">'+describeFilters().map(p=>'\u2022 '+escapeHtml(p)).join('<br>')+'</div>'
+   +'<div class="kp-row">'+kpis+'</div>'
+   +'<table><thead>'+head+'</thead><tbody>'+body+'</tbody><tfoot>'+foot+'</tfoot></table>'
+   +'</body></html>');
+  w.document.close();
+  setTimeout(()=>{w.focus();w.print();},350);
+};
+
+// ══════════════════════════════════════════════════════
+// SHARED CONSTANTS (used by both Charts IIFE and Real Growth)
+// ══════════════════════════════════════════════════════
+const FY_MONTHS_GL   = ['07','08','09','10','11','12','01','02','03','04','05','06'];
+const MONTH_NAMES_GL = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'};
+const MONTH_LABELS   = FY_MONTHS_GL.map(m=>MONTH_NAMES_GL[m]);
+const FY_COLORS = {
+  FY21:'#b8b2aa', FY22:'#5a7a6a', FY23:'#7a6a4a', FY24:'#c98a2b', FY25:'#a8482a', FY26:'#1c1a17',
+};
+
+// Initialize Monthly Report year selector
+initYearSelector();
+
+// ══════════════════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════════════════
+(function initCharts(){
+  const FY_MONTHS   = FY_MONTHS_GL;
+  const MONTH_NAMES = MONTH_NAMES_GL;
+
+  // Distinct palette — easy to tell apart even when overlapping
+  const FY_COLORS = {
+    FY21:'#b8b2aa',  // warm gray
+    FY22:'#5a7a6a',  // muted teal
+    FY23:'#7a6a4a',  // warm brown
+    FY24:'#c98a2b',  // amber
+    FY25:'#a8482a',  // rust
+    FY26:'#1c1a17',  // near-black
+  };
+  // FY_ORDER, MONTHLY loaded from data.js (regenerated by build_data.py)
+
+  // ── Budget/Forecast data from May 2026 report ──
+  const BUDGET = {
+    CAD: { // WIL monthly budget FY26 (Jul→Jun)
+      FY26: [126819,115290,115290,126819,115290,92232,121055,109526,126819,121055,115290,126819]
+    },
+    USD: { // USA Corp monthly budget FY26 (Jul→Jun)
+      FY26: [156388,142171,142171,156388,142171,113736,149279,135062,156388,149279,142171,156388]
+    }
+  };
+
+  // ── Trailing 12-month ──
+  function buildTrailing12(){
+    // Build a map of {YYYY-MM: {CAD:rev, USD:rev}}
+    const map = {};
+    DATA.forEach(r => {
+      if(!r.date || !r.cur) return;
+      const ym = String(r.date).slice(0,7);
+      if(!map[ym]) map[ym] = {CAD:0, USD:0};
+      map[ym][r.cur] = (map[ym][r.cur]||0) + (r.rev||0);
+    });
+    const months = Object.keys(map).sort();
+    if(months.length < 2) return {labels:[], cad:[], usd:[]};
+
+    const labels=[], cad=[], usd=[];
+    for(let i=0; i<months.length; i++){
+      const ym = months[i];
+      // sum last 12 months ending at ym
+      let sc=0, su=0;
+      for(let j=Math.max(0,i-11); j<=i; j++){
+        sc += map[months[j]].CAD||0;
+        su += map[months[j]].USD||0;
+      }
+      // Only include if we have enough history (at least 3 months)
+      if(i >= 2){
+        const [yr,mo] = ym.split('-');
+        labels.push(MONTH_NAMES[mo]+' '+yr.slice(2));
+        cad.push(sc);
+        usd.push(su);
+      }
+    }
+    return {labels, cad, usd};
+  }
+
+  // Chart.js global defaults
+  Chart.defaults.font.family = '"Nunito","Quicksand",system-ui,sans-serif';
+  Chart.defaults.font.size   = 11;
+  Chart.defaults.color       = '#7a7264';
+
+  const chartInstances = {};
+  function destroyChart(id){ if(chartInstances[id]){ chartInstances[id].destroy(); delete chartInstances[id]; } }
+
+  // ── FX rate ──
+  let fxRate = 1.3723; // USD → CAD (multiply USD by this to get CAD)
+  document.getElementById('fx-input').addEventListener('input', e=>{
+    const v = parseFloat(e.target.value);
+    if(v > 0) { fxRate = v; renderMonthlyChart(); renderYTDChart(); renderT12Chart(); render(); }
+  });
+
+  // ── Shared currency state (CAD | USD | ALL) ──
+  // ── Industry filter ──────────────────────────────────────────────────────────
+  let chartIndustry = 'All';
+  const INDUSTRY_ORDER = ['All', 'Plywood - Softwood', 'Plywood - Hardwood', 'Gypsum', 'Fiberboard', 'Other'];
+
+  function buildIndustryPills(){
+    const pill = document.getElementById('industry-pill');
+    const available = typeof MONTHLY_BY_INDUSTRY !== 'undefined'
+      ? INDUSTRY_ORDER.filter(i => i==='All' || MONTHLY_BY_INDUSTRY[i])
+      : ['All'];
+    pill.innerHTML = available.map(ind =>
+      `<button class="chart-tab${ind===chartIndustry?' on':''}" data-ind="${ind}">${ind}</button>`
+    ).join('');
+    pill.querySelectorAll('[data-ind]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        chartIndustry = btn.getAttribute('data-ind');
+        pill.querySelectorAll('[data-ind]').forEach(b => b.classList.toggle('on', b===btn));
+        document.getElementById('industry-note').style.display = chartIndustry==='All' ? 'none' : 'inline';
+        renderMonthlyChart(); renderYTDChart(); renderT12Chart();
+      });
+    });
+  }
+
+  let chartCur = 'ALL';
+  function updateCurButtons(){
+    document.querySelectorAll('#chart-cur-pill [data-ccur]').forEach(b=>{
+      const c = b.getAttribute('data-ccur');
+      b.classList.toggle('on', c===chartCur);
+      b.classList.remove('cad','usd'); if(c==='CAD') b.classList.add('cad'); if(c==='USD') b.classList.add('usd');
+    });
+    const fxWrap = document.getElementById('fx-wrap');
+    fxWrap.style.display = chartCur==='ALL' ? 'flex' : 'none';
+    document.getElementById('t12-subtitle').textContent = chartCur==='ALL'
+      ? `Rolling sum of last 12 months — USD converted @ ${fxRate.toFixed(3)} CAD`
+      : 'Rolling sum of last 12 months — both currencies in origin';
+  }
+  document.querySelectorAll('#chart-cur-pill [data-ccur]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      chartCur = btn.getAttribute('data-ccur');
+      updateCurButtons();
+      renderMonthlyChart(); renderYTDChart(); renderT12Chart();
+    });
+  });
+
+  // Returns monthly[12] for a given FY in the current chartCur (with FX for ALL)
+  function getMonthlyData(fy){
+    let cad, usd;
+    if(chartIndustry !== 'All' && typeof MONTHLY_BY_INDUSTRY !== 'undefined' && MONTHLY_BY_INDUSTRY[chartIndustry]){
+      const ind = MONTHLY_BY_INDUSTRY[chartIndustry];
+      cad = (ind.CAD&&ind.CAD[fy]) ? ind.CAD[fy] : new Array(12).fill(null);
+      usd = (ind.USD&&ind.USD[fy]) ? ind.USD[fy] : new Array(12).fill(null);
+    } else {
+      cad = (MONTHLY.CAD&&MONTHLY.CAD[fy]) ? MONTHLY.CAD[fy] : new Array(12).fill(0);
+      usd = (MONTHLY.USD&&MONTHLY.USD[fy]) ? MONTHLY.USD[fy] : new Array(12).fill(0);
+    }
+    if(chartCur==='CAD') return cad;
+    if(chartCur==='USD') return usd;
+    return cad.map((v,i)=> (v||0) + (usd[i]||0)*fxRate);
+  }
+
+  function fysAvailable(){
+    const set = new Set();
+    if(chartCur==='CAD'||chartCur==='ALL') FY_ORDER.forEach(fy=>{ if(MONTHLY.CAD&&MONTHLY.CAD[fy]) set.add(fy); });
+    if(chartCur==='USD'||chartCur==='ALL') FY_ORDER.forEach(fy=>{ if(MONTHLY.USD&&MONTHLY.USD[fy]) set.add(fy); });
+    return FY_ORDER.filter(fy=>set.has(fy));
+  }
+
+  function curLabel(){ return chartCur==='ALL' ? 'CAD (all)' : chartCur; }
+
+  // ── End-of-line label plugin for line charts ──
+  const endLabelPlugin = {
+    id:'endLabels',
+    afterDraw(chart){
+      const ctx2 = chart.ctx;
+      chart.data.datasets.forEach((ds,i)=>{
+        const meta = chart.getDatasetMeta(i);
+        if(meta.hidden||meta.type==='bar') return;
+        let lastPt=null, lastIdx=-1;
+        for(let j=meta.data.length-1;j>=0;j--){
+          if(ds.data[j]!=null){ lastPt=meta.data[j]; lastIdx=j; break; }
+        }
+        if(!lastPt) return;
+        ctx2.save();
+        ctx2.fillStyle = ds.borderColor||'#999';
+        ctx2.font = `bold 10.5px "Nunito",system-ui,sans-serif`;
+        ctx2.textAlign='left';
+        ctx2.fillText(ds.label, lastPt.x+7, lastPt.y+4);
+        ctx2.restore();
+      });
+    }
+  };
+
+  // ── Monthly Sales Chart ──
+  let monthlySelFYs = new Set(['FY25','FY26']);
+
+  function buildFYTabs(containerId, selSet, onChange){
+    const cont = document.getElementById(containerId);
+    const fys  = fysAvailable();
+    cont.innerHTML = fys.map(fy=>
+      `<button class="chart-tab${selSet.has(fy)?' on':''}" data-fy="${fy}">${fy}</button>`
+    ).join('');
+    cont.querySelectorAll('[data-fy]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const fy=btn.getAttribute('data-fy');
+        if(selSet.has(fy)){ if(selSet.size>1) selSet.delete(fy); } else selSet.add(fy);
+        onChange();
+      });
+    });
+  }
+
+  function renderMonthlyChart(){
+    buildFYTabs('monthly-fy-tabs', monthlySelFYs, renderMonthlyChart);
+    destroyChart('monthly');
+    const fys = [...monthlySelFYs].sort();
+    const datasets = fys.map(fy=>({
+      label: fy,
+      data: getMonthlyData(fy),
+      backgroundColor: FY_COLORS[fy]||'#999',
+      borderRadius:3, borderSkipped:false,
+    }));
+    document.getElementById('chart-monthly-legend').innerHTML = fys.map(fy=>
+      `<div class="chart-legend-item"><div class="chart-legend-dot" style="background:${FY_COLORS[fy]||'#999'}"></div>${fy}</div>`
+    ).join('');
+    const ctx = document.getElementById('chart-monthly').getContext('2d');
+    chartInstances.monthly = new Chart(ctx, {
+      type:'bar', data:{ labels:MONTH_LABELS, datasets },
+      options:{
+        responsive:true, maintainAspectRatio:true,
+        interaction:{ mode:'index', intersect:false },
+        plugins:{ legend:{display:false}, tooltip:{ callbacks:{
+          label: c=>`${c.dataset.label}: $${Math.round(c.raw||0).toLocaleString()} ${curLabel()}`
+        }}},
+        scales:{
+          x:{ grid:{color:'#e6e0d4'}, ticks:{font:{size:10.5,weight:'600'}} },
+          y:{ grid:{color:'#e6e0d4'}, ticks:{ font:{size:10.5},
+            callback: v=>'$'+(v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'k':v) }}
+        }
+      }
+    });
+  }
+
+  // ── Cumulative YTD Chart ──
+  let ytdSelFYs = new Set(['FY24','FY25','FY26']);
+
+  function renderYTDChart(){
+    buildFYTabs('ytd-fy-tabs', ytdSelFYs, renderYTDChart);
+    destroyChart('ytd');
+    const fys = [...ytdSelFYs].sort();
+
+    // Store monthly arrays per FY for tooltip access
+    const monthlyByFY = {};
+    const datasets = fys.map(fy=>{
+      const monthly = getMonthlyData(fy);
+      monthlyByFY[fy] = monthly;
+      const cumul = [];
+      let sum=0;
+      monthly.forEach(v=>{ sum+=v; cumul.push(sum>0?sum:null); });
+      for(let i=cumul.length-1;i>=0;i--){ if(cumul[i]===null||cumul[i]===0) cumul[i]=null; else break; }
+      return {
+        label:fy, data:cumul,
+        monthlyData: monthly,   // stashed for tooltip
+        borderColor: FY_COLORS[fy]||'#999',
+        backgroundColor:'transparent',
+        borderWidth: fy==='FY26'?3:1.5,
+        borderDash: fy==='FY21'?[4,3]:[],
+        pointRadius: fy==='FY26'?5:3,
+        pointHoverRadius: fy==='FY26'?7:5,
+        pointBackgroundColor: FY_COLORS[fy]||'#999',
+        pointBorderColor:'#fff', pointBorderWidth:1.5,
+        tension:0.3, spanGaps:false,
+      };
+    });
+
+    document.getElementById('chart-ytd-legend').innerHTML = fys.map(fy=>
+      `<div class="chart-legend-item"><div class="chart-legend-dot" style="background:${FY_COLORS[fy]||'#999'}"></div>${fy}</div>`
+    ).join('');
+
+    const ctx = document.getElementById('chart-ytd').getContext('2d');
+    chartInstances.ytd = new Chart(ctx, {
+      type:'line', data:{ labels:MONTH_LABELS, datasets },
+      plugins:[ endLabelPlugin ],
+      options:{
+        responsive:true, maintainAspectRatio:true,
+        layout:{ padding:{ right:38 } },
+        interaction:{ mode:'index', intersect:false },
+        plugins:{
+          legend:{ display:false },
+          tooltip:{
+            usePointStyle:true,
+            callbacks:{
+              title: items => MONTH_LABELS[items[0].dataIndex],
+              label: ctx=>{
+                if(ctx.raw==null) return null;
+                const monthly = ctx.dataset.monthlyData;
+                const mi = ctx.dataIndex;
+                const ytdVal = ctx.raw;
+                const monthVal = monthly[mi]||0;
+                const cur = curLabel();
+                return [
+                  ` ${ctx.dataset.label}  YTD: $${Math.round(ytdVal).toLocaleString()} ${cur}`,
+                  `        this month: $${Math.round(monthVal).toLocaleString()} ${cur}`,
+                ];
+              },
+              labelColor: ctx=>({ borderColor: ctx.dataset.borderColor, backgroundColor: ctx.dataset.borderColor }),
+            }
+          }
+        },
+        scales:{
+          x:{ grid:{color:'#e6e0d4'}, ticks:{font:{size:10.5,weight:'600'}} },
+          y:{ grid:{color:'#e6e0d4'}, ticks:{ font:{size:10.5},
+            callback: v=>'$'+(v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'k':v) }}
+        }
+      }
+    });
+  }
+
+  // ── Trailing 12-Month Chart ──
+  function renderT12Chart(){
+    destroyChart('t12');
+    const {labels, cad, usd} = buildTrailing12();
+    const combined = cad.map((v,i)=> v + usd[i]*fxRate);
+    const isAll = chartCur==='ALL';
+
+    document.getElementById('t12-subtitle').textContent = isAll
+      ? `Rolling sum — USD converted @ ${fxRate.toFixed(3)} CAD/USD`
+      : 'Rolling sum of last 12 months — both currencies in origin';
+
+    const datasets = isAll ? [
+      {
+        label:'Combined CAD',
+        data:combined,
+        borderColor:'#1c1a17',
+        backgroundColor:'rgba(28,26,23,.07)',
+        fill:true, borderWidth:3, pointRadius:2, tension:0.35,
+      },
+      {
+        label:'WIL (CAD)',
+        data:cad,
+        borderColor:'#4a5d3a',
+        backgroundColor:'transparent',
+        borderWidth:1.5, pointRadius:0, tension:0.35, borderDash:[4,3],
+      },
+      {
+        label:'USA (USD→CAD)',
+        data:usd.map(v=>v*fxRate),
+        borderColor:'#3a4a5d',
+        backgroundColor:'transparent',
+        borderWidth:1.5, pointRadius:0, tension:0.35, borderDash:[4,3],
+      },
+    ] : [
+      {
+        label:'WIL CAD', data:cad,
+        borderColor:'#4a5d3a', backgroundColor:'rgba(74,93,58,.08)',
+        fill:true, borderWidth:2.5, pointRadius:2, tension:0.35,
+      },
+      {
+        label:'USA USD', data:usd,
+        borderColor:'#3a4a5d', backgroundColor:'rgba(58,74,93,.08)',
+        fill:true, borderWidth:2.5, pointRadius:2, tension:0.35,
+      },
+    ];
+
+    const ctx = document.getElementById('chart-t12').getContext('2d');
+    chartInstances.t12 = new Chart(ctx, {
+      type:'line', data:{ labels, datasets },
+      options:{
+        responsive:true, maintainAspectRatio:true,
+        interaction:{ mode:'index', intersect:false },
+        plugins:{
+          legend:{ display:true, position:'bottom', labels:{font:{size:11,weight:'700'},boxWidth:12,padding:16} },
+          tooltip:{ callbacks:{
+            label: c=>{
+              const suffix = isAll&&c.dataset.label==='Combined CAD' ? ' CAD (all)' :
+                             isAll&&c.dataset.label==='WIL (CAD)' ? ' CAD' :
+                             isAll&&c.dataset.label==='USA (USD→CAD)' ? ' CAD equiv.' : '';
+              return `${c.dataset.label}: $${Math.round(c.raw||0).toLocaleString()}${suffix}`;
+            }
+          }}
+        },
+        scales:{
+          x:{ grid:{color:'#e6e0d4'}, ticks:{font:{size:10},maxTicksLimit:16,maxRotation:45} },
+          y:{ grid:{color:'#e6e0d4'}, ticks:{ font:{size:10.5},
+            callback: v=>'$'+(v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'k':v) }}
+        }
+      }
+    });
+  }
+
+  // ── Budget vs Actual Chart ──
+  let bvaCur = 'CAD';
+  document.querySelectorAll('#bva-cur-tabs [data-bcur]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      bvaCur = btn.getAttribute('data-bcur');
+      document.querySelectorAll('#bva-cur-tabs [data-bcur]').forEach(b=>{
+        b.classList.toggle('on', b===btn);
+        b.classList.toggle('cad', b.getAttribute('data-bcur')==='CAD');
+        b.classList.toggle('usd', b.getAttribute('data-bcur')==='USD');
+      });
+      renderBVAChart();
+    });
+  });
+
+  function renderBVAChart(){
+    destroyChart('bva');
+    const monthly = (MONTHLY[bvaCur]&&MONTHLY[bvaCur]['FY26']) ? MONTHLY[bvaCur]['FY26'] : new Array(12).fill(0);
+    const budget  = BUDGET[bvaCur]['FY26'];
+
+    // pct to budget per month (only where actuals exist)
+    const pctData = monthly.map((v,i) => v > 0 ? Math.round(v/budget[i]*100) : null);
+    const pctColors = pctData.map(v => v===null ? 'transparent' : v >= 100 ? '#4a5d3a' : '#a8482a');
+
+    const leg = document.getElementById('chart-bva-legend');
+    leg.innerHTML = [
+      ['#1c1a17','Actual'],
+      ['#c5c0b6','Budget'],
+    ].map(([c,l])=>`<div class="chart-legend-item"><div class="chart-legend-dot" style="background:${c}"></div>${l}</div>`).join('');
+
+    const ctx = document.getElementById('chart-bva').getContext('2d');
+    chartInstances.bva = new Chart(ctx, {
+      type:'bar',
+      data:{
+        labels: MONTH_LABELS,
+        datasets:[
+          {
+            label:'Actual',
+            data: monthly.map(v=>v||null),
+            backgroundColor:'#1c1a17',
+            borderRadius:3,
+            borderSkipped:false,
+            order:1,
+          },
+          {
+            label:'Budget',
+            data: budget,
+            backgroundColor:'rgba(197,192,182,0.5)',
+            borderColor:'#c5c0b6',
+            borderWidth:1.5,
+            borderRadius:3,
+            borderSkipped:false,
+            order:2,
+          },
+          {
+            label:'% to Budget',
+            data: pctData,
+            type:'line',
+            borderColor:'#c98a2b',
+            backgroundColor:'transparent',
+            borderWidth:2,
+            pointRadius:5,
+            pointBackgroundColor: pctColors,
+            pointBorderColor:'#fff',
+            pointBorderWidth:1.5,
+            tension:0.25,
+            yAxisID:'yPct',
+            spanGaps:false,
+            order:0,
+          }
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:true,
+        interaction:{ mode:'index', intersect:false },
+        plugins:{
+          legend:{ display:false },
+          tooltip:{
+            callbacks:{
+              label: ctx=>{
+                if(ctx.dataset.label==='% to Budget')
+                  return ctx.raw!=null ? `% to Budget: ${ctx.raw}%` : null;
+                return `${ctx.dataset.label}: $${Math.round(ctx.raw||0).toLocaleString()} ${bvaCur}`;
+              }
+            }
+          }
+        },
+        scales:{
+          x:{ grid:{ color:'#e6e0d4' }, ticks:{ font:{size:10.5,weight:'600'} } },
+          y:{
+            grid:{ color:'#e6e0d4' },
+            ticks:{ font:{size:10.5}, callback: v=>'$'+(v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'k':v) }
+          },
+          yPct:{
+            position:'right',
+            grid:{ drawOnChartArea:false },
+            ticks:{ font:{size:10.5}, callback: v=>v+'%' },
+            min:0, max:250,
+          }
+        }
+      }
+    });
+  }
+
+  // ── Collapsible section ──
+  makeToggle('charts-toggle','charts-caret','charts-section');
+  // Delay t12bva toggle to ensure charts are rendered
+  setTimeout(()=>makeToggle('t12bva-toggle','t12bva-caret','t12bva-section'), 600);
+
+  // Init all charts
+  buildIndustryPills();
+  updateCurButtons();   // reflect default chartCur ('ALL') + show FX box
+  renderMonthlyChart();
+  renderYTDChart();
+  renderT12Chart();
+  renderBVAChart();
+
+  // Update max-height after charts render
+  setTimeout(()=>{
+    const sec = document.getElementById('charts-section');
+    if(sec && !sec.classList.contains('collapsed')) sec.style.maxHeight = sec.scrollHeight+'px';
+  }, 500);
+})();
+
+buildGroupDropdowns();
+buildColPicker();
+syncGrp2();
+render();
+
+// ── Tab navigation ──────────────────────────────────────────────────────────
+let activeTab = 'monthly';
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const t = btn.getAttribute('data-tab');
+    activeTab = t;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b===btn));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id==='tab-'+t));
+    if(t==='growth') renderRealGrowth();
+    if(t==='nocost') renderNoCostTab();
+  });
+});
+
+// ── No Cost Items Tab ───────────────────────────────────────────────────────
+(function(){
+  function getAllNC(){ return getActiveData().filter(r => !r.cost || r.cost === 0); }
+  const NC_TEXT_KEYS = ['sonum','date','cust','inv','desc','cls','fy','cur','cust_po','warehouse','ship_via'];
+
+  let ncSelFY   = '';
+  let ncSortKey = 'rev';
+  let ncSortDir = -1;
+  let ncWHFilter = 'all';
+  let ncG1      = 'none';
+  let ncG2      = '';
+  // collapsed state: Set of group-key strings (parent key for G1, "g1Key||g2Key" for G2 sub-groups)
+  let ncCollapsed = new Set();
+  // detail-expanded: Set of "<sonum>|<flatIndex>" for open detail panels
+  let ncExpanded  = new Set();
+  // flattened detail rows for current render (used by event handlers)
+  let _ncFlatRows = [];
+
+  const NC_COLS = {
+    sonum:'SO #', cust:'Customer', cls:'Item Class', inv:'Item ID',
+    fy:'FY', cur:'Currency', warehouse:'Warehouse', ship_via:'Ship Via'
+  };
+
+  // ── FY pill buttons ────────────────────────────────────────────────────────
+  function initNcFyBtns(){
+    const wrap = el('nc-fy-btns');
+    const fys = [...new Set(getAllNC().map(r=>r.fy))].sort();
+    function setActive(fy){ ncSelFY=fy; wrap.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.fy===fy)); ncExpanded.clear(); ncCollapsed.clear(); renderNoCostTab(); }
+    const allBtn=document.createElement('button'); allBtn.className='chart-tab on'; allBtn.dataset.fy=''; allBtn.textContent='All'; allBtn.addEventListener('click',()=>setActive('')); wrap.appendChild(allBtn);
+    fys.forEach(fy=>{ const btn=document.createElement('button'); btn.className='chart-tab'; btn.dataset.fy=fy; btn.textContent=fy; btn.addEventListener('click',()=>setActive(fy)); wrap.appendChild(btn); });
+  }
+
+  // ── Warehouse type pill buttons ────────────────────────────────────────────
+  function initNcWHBtns(){
+    const wrap = el('nc-wh-btns');
+    function setWH(v){ ncWHFilter=v; wrap.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.wh===v)); ncExpanded.clear(); ncCollapsed.clear(); renderNoCostTab(); }
+    [['all','All'],['p','Project (P-)'],['std','Standard']].forEach(([v,label],i)=>{
+      const btn=document.createElement('button'); btn.className='chart-tab'+(i===0?' on':''); btn.dataset.wh=v; btn.textContent=label;
+      btn.addEventListener('click',()=>setWH(v)); wrap.appendChild(btn);
+    });
+  }
+
+  // ── Group dropdowns ────────────────────────────────────────────────────────
+  function syncNcGrp2(){
+    const g2=el('nc-grp2'); const then=el('nc-grp-then');
+    if(ncG1==='none'){ g2.disabled=true; then.classList.add('off'); g2.value=''; ncG2=''; }
+    else { g2.disabled=false; then.classList.remove('off'); }
+    // disable same option in g2
+    [...g2.options].forEach(o=>{ o.disabled=(o.value!==''&&o.value===ncG1); });
+    if(g2.value===ncG1) { g2.value=''; ncG2=''; }
+  }
+  el('nc-grp1').addEventListener('change',()=>{ ncG1=el('nc-grp1').value; syncNcGrp2(); ncCollapsed.clear(); ncExpanded.clear(); renderNoCostTab(); });
+  el('nc-grp2').addEventListener('change',()=>{ ncG2=el('nc-grp2').value; ncCollapsed.clear(); ncExpanded.clear(); renderNoCostTab(); });
+
+  // ── Filtered base rows (FY + search, no warehouse filter) ─────────────────
+  function getNcBaseRows(){
+    const q=(el('nc-search').value||'').trim().toLowerCase();
+    let rows=ncSelFY?getAllNC().filter(r=>r.fy===ncSelFY):getAllNC().slice();
+    if(q) rows=rows.filter(r=>(r.sonum+' '+r.inv+' '+r.desc+' '+r.cust+' '+r.cls+' '+r.cust_po).toLowerCase().includes(q));
+    return rows;
+  }
+
+  function getNcRows(){
+    let rows=getNcBaseRows();
+    if(ncWHFilter==='p') rows=rows.filter(r=>(r.warehouse||'').startsWith('P'));
+    else if(ncWHFilter==='std') rows=rows.filter(r=>!(r.warehouse||'').startsWith('P'));
+    if(ncG1==='none'){
+      rows.sort((a,b)=>{ const av=a[ncSortKey],bv=b[ncSortKey]; if(NC_TEXT_KEYS.includes(ncSortKey)) return String(av||'').localeCompare(String(bv||''))*ncSortDir; return ((av||0)-(bv||0))*ncSortDir; });
+    }
+    return rows;
+  }
+
+  // ── Aggregation helpers ────────────────────────────────────────────────────
+  function ncAgg(rows){ return rows.reduce((a,r)=>{ a.lines++; a.qty+=(r.qty||0); a.rev+=r.rev; return a; },{lines:0,qty:0,rev:0}); }
+  function revCAD(rows){ const fx=parseFloat((el('fx-input')||{}).value)||1.3723; return rows.reduce((s,r)=>s+(r.cur==='USD'?r.rev*fx:r.rev),0); }
+
+  // ── Detail panel field ─────────────────────────────────────────────────────
+  function field(label,value,wide){ return '<div class="nc-field'+(wide?' wide':'')+'"><div class="fl">'+label+'</div><div class="fv">'+escapeHtml(String(value||'—'))+'</div></div>'; }
+
+  // ── Render a single detail row ─────────────────────────────────────────────
+  function detailRowHtml(r,colspan){
+    return '<tr class="nc-detail-row"><td colspan="'+colspan+'"><div class="nc-detail-inner">'+
+      field('SO Number',r.sonum)+field('Date',r.date)+field('Customer',r.cust,true)+
+      field('Customer PO',r.cust_po)+field('Item ID',r.inv)+field('Description',r.desc,true)+
+      field('Item Class',r.cls)+field('UOM',r.uom)+field('Qty',fmtN(r.qty||0))+
+      field('Unit Price',r.unit_price?fmt0(r.unit_price):'—')+field('Revenue',fmt0(r.rev||0))+
+      field('Unit Cost','—  (missing in Acumatica)')+field('Currency',r.cur)+
+      field('Fiscal Year',r.fy)+field('Warehouse',r.warehouse)+
+      field('Ship Via',r.ship_via)+field('Status',r.status)+
+      '</div></td></tr>';
+  }
+
+  // ── Render a flat detail line (used inside groups and in flat mode) ────────
+  function flatLineHtml(r,flatIdx,colspan,isChild){
+    const key=r.sonum+'|'+flatIdx;
+    const open=ncExpanded.has(key);
+    const cls='nc-data'+(isChild?' nc-child-row':'');
+    const row='<tr class="'+cls+'" data-fi="'+flatIdx+'">'+
+      '<td style="text-align:center"><button class="nc-expand-btn" data-fi="'+flatIdx+'" title="Show details">'+(open?'&#8722;':'&#43;')+'</button></td>'+
+      '<td class="nc-sonumber" data-fi="'+flatIdx+'">'+escapeHtml(r.sonum||'—')+'</td>'+
+      '<td>'+escapeHtml(r.date||'')+'</td>'+
+      '<td>'+escapeHtml(r.cust||'')+'</td>'+
+      '<td>'+escapeHtml(r.inv||'')+'</td>'+
+      '<td class="nc-desc">'+escapeHtml(r.desc||'')+'</td>'+
+      '<td>'+escapeHtml(r.cls||'')+'</td>'+
+      '<td>'+escapeHtml(r.fy||'')+'</td>'+
+      '<td>'+escapeHtml(r.cur||'')+'</td>'+
+      '<td class="nc-num">'+fmtN(r.qty||0)+'</td>'+
+      '<td class="nc-num">'+fmt0(r.rev||0)+'</td>'+
+      '</tr>';
+    return row+(open?detailRowHtml(r,colspan):'');
+  }
+
+  // ── Main render ────────────────────────────────────────────────────────────
+  function renderNoCostTab(){
+    const _fx=parseFloat((el('fx-input')||{}).value)||1.3723;
+    const rows=getNcRows();
+    const totalRevCAD=rows.reduce((s,r)=>s+(r.cur==='USD'?r.rev*_fx:r.rev),0);
+
+    el('nc-k-lines').textContent =(rows.length).toLocaleString();
+    el('nc-k-sos').textContent   =(new Set(rows.map(r=>r.sonum))).size.toLocaleString();
+    el('nc-k-rev').textContent   =fmt0(totalRevCAD);
+    el('nc-k-items').textContent =(new Set(rows.map(r=>r.inv))).size.toLocaleString();
+    // P vs Standard split note (shown only when warehouse filter is 'all')
+    const revSplitEl=el('nc-k-rev-split');
+    if(ncWHFilter==='all'){
+      const baseRows=getNcBaseRows();
+      const pRows=baseRows.filter(r=>(r.warehouse||'').startsWith('P'));
+      const stdRows=baseRows.filter(r=>!(r.warehouse||'').startsWith('P'));
+      const pRev=pRows.reduce((s,r)=>s+(r.cur==='USD'?r.rev*_fx:r.rev),0);
+      const stdRev=stdRows.reduce((s,r)=>s+(r.cur==='USD'?r.rev*_fx:r.rev),0);
+      revSplitEl.innerHTML='<span title="Project warehouses (P-)">P-: '+fmt0(pRev)+' ('+pRows.length+')</span><br><span title="Standard warehouses">Std: '+fmt0(stdRev)+' ('+stdRows.length+')</span>';
+    } else { revSplitEl.textContent=''; }
+    el('nc-resnote').textContent =rows.length.toLocaleString()+' line'+(rows.length===1?'':'s')+(ncSelFY?' in '+ncSelFY:' across all years');
+
+    let thead='', tbody='';
+    _ncFlatRows=[];
+
+    if(ncG1==='none'){
+      // ── Flat (no grouping) ─────────────────────────────────────────────────
+      thead='<tr>'+
+        '<th class="nc-th nc-th-icon"></th>'+
+        '<th class="nc-th" data-k="sonum">SO #<span class="arr"></span></th>'+
+        '<th class="nc-th" data-k="date">Date<span class="arr"></span></th>'+
+        '<th class="nc-th" data-k="cust">Customer<span class="arr"></span></th>'+
+        '<th class="nc-th" data-k="inv">Item ID<span class="arr"></span></th>'+
+        '<th class="nc-th nc-desc" data-k="desc">Description<span class="arr"></span></th>'+
+        '<th class="nc-th" data-k="cls">Item Class<span class="arr"></span></th>'+
+        '<th class="nc-th" data-k="fy">FY<span class="arr"></span></th>'+
+        '<th class="nc-th" data-k="cur">Cur<span class="arr"></span></th>'+
+        '<th class="nc-th nc-num" data-k="qty">Qty<span class="arr"></span></th>'+
+        '<th class="nc-th nc-num" data-k="rev">Revenue<span class="arr"></span></th>'+
+        '</tr>';
+      rows.forEach(r=>{ const fi=_ncFlatRows.length; _ncFlatRows.push(r); tbody+=flatLineHtml(r,fi,11,false); });
+      tbody=tbody||'<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--mut)">No lines match</td></tr>';
+
+    } else if(!ncG2){
+      // ── Single-level grouping ──────────────────────────────────────────────
+      const g1Label=NC_COLS[ncG1]||ncG1;
+      thead='<tr>'+
+        '<th class="nc-th nc-th-icon"></th>'+
+        '<th class="nc-th">'+g1Label+'</th>'+
+        '<th class="nc-th nc-num">Lines</th>'+
+        '<th class="nc-th nc-num">Qty</th>'+
+        '<th class="nc-th nc-num">Revenue</th>'+
+        '</tr>';
+      // Build groups
+      const gmap=new Map();
+      rows.forEach(r=>{ const k=String(r[ncG1]||''); if(!gmap.has(k)) gmap.set(k,[]); gmap.get(k).push(r); });
+      let groups=[...gmap.entries()].map(([k,rs])=>({k,rs,...ncAgg(rs),rcad:revCAD(rs)}));
+      groups.sort((a,b)=>b.rcad-a.rcad);
+      groups.forEach(g=>{
+        const open=!ncCollapsed.has(g.k);
+        tbody+='<tr class="nc-grp-row" data-gk="'+escapeHtml(g.k)+'">'+
+          '<td class="nc-g1cell" colspan="2"><span class="nc-twist">'+(open?'▼':'▶')+'</span>'+escapeHtml(g.k||'(blank)')+'<span class="nc-cnt">'+g.lines+' line'+(g.lines===1?'':'s')+'</span></td>'+
+          '<td class="nc-num">'+g.lines+'</td>'+
+          '<td class="nc-num">'+fmtN(g.qty)+'</td>'+
+          '<td class="nc-num">'+fmt0(g.rcad)+'</td>'+
+          '</tr>';
+        if(open){
+          g.rs.forEach(r=>{ const fi=_ncFlatRows.length; _ncFlatRows.push(r); tbody+=flatLineHtml(r,fi,5,true); });
+        }
+      });
+      tbody=tbody||'<tr><td colspan="5" style="padding:24px;text-align:center;color:var(--mut)">No lines match</td></tr>';
+
+    } else {
+      // ── Two-level grouping ─────────────────────────────────────────────────
+      const g1Label=NC_COLS[ncG1]||ncG1, g2Label=NC_COLS[ncG2]||ncG2;
+      thead='<tr>'+
+        '<th class="nc-th nc-th-icon"></th>'+
+        '<th class="nc-th">'+g1Label+'</th>'+
+        '<th class="nc-th">'+g2Label+'</th>'+
+        '<th class="nc-th nc-num">Lines</th>'+
+        '<th class="nc-th nc-num">Qty</th>'+
+        '<th class="nc-th nc-num">Revenue</th>'+
+        '</tr>';
+      // Build two-level groups
+      const pmap=new Map();
+      rows.forEach(r=>{
+        const k1=String(r[ncG1]||''), k2=String(r[ncG2]||'');
+        if(!pmap.has(k1)) pmap.set(k1,new Map());
+        const cmap=pmap.get(k1);
+        if(!cmap.has(k2)) cmap.set(k2,[]);
+        cmap.get(k2).push(r);
+      });
+      let parents=[...pmap.entries()].map(([k1,cmap])=>{
+        const allRows=[...cmap.values()].flat();
+        return {k1,cmap,allRows,...ncAgg(allRows),rcad:revCAD(allRows)};
+      });
+      parents.sort((a,b)=>b.rcad-a.rcad);
+      parents.forEach(p=>{
+        const pOpen=!ncCollapsed.has(p.k1);
+        tbody+='<tr class="nc-grp-row" data-gk="'+escapeHtml(p.k1)+'">'+
+          '<td class="nc-g1cell" colspan="2"><span class="nc-twist">'+(pOpen?'▼':'▶')+'</span>'+escapeHtml(p.k1||'(blank)')+'<span class="nc-cnt">'+p.lines+' line'+(p.lines===1?'':'s')+'</span></td>'+
+          '<td></td>'+
+          '<td class="nc-num">'+p.lines+'</td>'+
+          '<td class="nc-num">'+fmtN(p.qty)+'</td>'+
+          '<td class="nc-num">'+fmt0(p.rcad)+'</td>'+
+          '</tr>';
+        if(pOpen){
+          let children=[...p.cmap.entries()].map(([k2,rs])=>({k2,rs,...ncAgg(rs),rcad:revCAD(rs)}));
+          children.sort((a,b)=>b.rcad-a.rcad);
+          children.forEach(c=>{
+            const subKey=p.k1+'||'+c.k2;
+            const cOpen=!ncCollapsed.has(subKey);
+            tbody+='<tr class="nc-sub-row" data-sgk="'+escapeHtml(p.k1)+'||'+escapeHtml(c.k2)+'">'+
+              '<td></td>'+
+              '<td class="nc-g2cell" colspan="2"><span class="nc-twist">'+(cOpen?'▼':'▶')+'</span>'+escapeHtml(c.k2||'(blank)')+'<span class="nc-cnt">'+c.lines+' line'+(c.lines===1?'':'s')+'</span></td>'+
+              '<td class="nc-num">'+c.lines+'</td>'+
+              '<td class="nc-num">'+fmtN(c.qty)+'</td>'+
+              '<td class="nc-num">'+fmt0(c.rcad)+'</td>'+
+              '</tr>';
+            if(cOpen){
+              c.rs.forEach(r=>{ const fi=_ncFlatRows.length; _ncFlatRows.push(r); tbody+=flatLineHtml(r,fi,6,true); });
+            }
+          });
+        }
+      });
+      tbody=tbody||'<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--mut)">No lines match</td></tr>';
+    }
+
+    el('nc-tbl').querySelector('thead').innerHTML=thead;
+    el('nc-tbody').innerHTML=tbody;
+
+    // Update sort arrows (flat mode only)
+    el('nc-tbl').querySelectorAll('thead th[data-k]').forEach(th=>{
+      const arr=th.querySelector('.arr'); if(!arr) return;
+      arr.textContent=th.getAttribute('data-k')===ncSortKey?(ncSortDir===1?'▲':'▼'):'';
+    });
+
+    // Flat-mode: sort on column header click
+    el('nc-tbl').querySelectorAll('thead th[data-k]').forEach(th=>{
+      th.style.cursor='pointer';
+      th.addEventListener('click',()=>{
+        const k=th.getAttribute('data-k');
+        if(ncSortKey===k) ncSortDir*=-1; else { ncSortKey=k; ncSortDir=NC_TEXT_KEYS.includes(k)?1:-1; }
+        ncExpanded.clear(); renderNoCostTab();
+      });
+    });
+
+    // Group row click — toggle collapse
+    el('nc-tbody').querySelectorAll('tr.nc-grp-row').forEach(tr=>{
+      tr.addEventListener('click',()=>{
+        const k=tr.getAttribute('data-gk');
+        if(ncCollapsed.has(k)) ncCollapsed.delete(k); else ncCollapsed.add(k);
+        renderNoCostTab();
+      });
+    });
+    el('nc-tbody').querySelectorAll('tr.nc-sub-row').forEach(tr=>{
+      tr.addEventListener('click',()=>{
+        const k=tr.getAttribute('data-sgk');
+        if(ncCollapsed.has(k)) ncCollapsed.delete(k); else ncCollapsed.add(k);
+        renderNoCostTab();
+      });
+    });
+
+    // Detail expand buttons and SO# cells
+    el('nc-tbody').querySelectorAll('.nc-expand-btn, .nc-sonumber').forEach(btn=>{
+      btn.addEventListener('click',e=>{
+        e.stopPropagation();
+        const fi=parseInt(btn.getAttribute('data-fi'));
+        const r=_ncFlatRows[fi]; if(!r) return;
+        const key=r.sonum+'|'+fi;
+        if(ncExpanded.has(key)) ncExpanded.delete(key); else ncExpanded.add(key);
+        renderNoCostTab();
+      });
+    });
+  }
+
+  el('nc-search').addEventListener('input',()=>{ ncExpanded.clear(); renderNoCostTab(); });
+
+  el('nc-export-csv').addEventListener('click',()=>{
+    const rows=getNcRows();
+    const head='SO#,Date,Customer,Customer PO,Item ID,Description,Item Class,FY,UOM,Qty,Unit Price,Revenue,Currency,Warehouse,Ship Via,Status';
+    const lines=rows.map(r=>[r.sonum,r.date,r.cust,r.cust_po,r.inv,r.desc,r.cls,r.fy,r.uom,r.qty,r.unit_price,r.rev,r.cur,r.warehouse,r.ship_via,r.status]
+      .map(v=>{ const s=String(v==null?'':v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(','));
+    const blob=new Blob([head+'\n'+lines.join('\n')],{type:'text/csv'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='no_cost_items.csv'; a.click();
+  });
+
+  // ── Exclusion Audit ────────────────────────────────────────────────────────
+  function renderExclAudit(){
+    const _fx=parseFloat((el('fx-input')||{}).value)||1.3723;
+    const excl=DATA.filter(r=>!!r.excl);
+    const whRows=excl.filter(r=>(r.excl||'').includes('WH'));
+    const intercoOnlyRows=excl.filter(r=>r.excl==='INTERCO');
+    const totalRev=excl.reduce((s,r)=>s+(r.cur==='USD'?r.rev*_fx:r.rev),0);
+    const whRev=whRows.reduce((s,r)=>s+(r.cur==='USD'?r.rev*_fx:r.rev),0);
+    const intercoRev=intercoOnlyRows.reduce((s,r)=>s+(r.cur==='USD'?r.rev*_fx:r.rev),0);
+    el('excl-k-lines').textContent=excl.length.toLocaleString();
+    el('excl-k-rev').textContent=fmt0(totalRev);
+    el('excl-k-wh').textContent=whRows.length.toLocaleString()+' lines';
+    el('excl-k-wh-sub').textContent=fmt0(whRev);
+    el('excl-k-interco').textContent=intercoOnlyRows.length.toLocaleString()+' lines';
+    el('excl-k-interco-sub').textContent=fmt0(intercoRev);
+    el('excl-audit-note').textContent='('+excl.length.toLocaleString()+' lines · '+fmt0(totalRev)+' — always all years)';
+    const theadHtml='<tr>'+
+      ['Reason','SO #','Date','Customer','Item ID','Description','Warehouse','FY','Revenue (CAD)']
+      .map(h=>'<th class="nc-th" style="white-space:nowrap">'+h+'</th>').join('')+'</tr>';
+    const groups=[
+      {label:'Non-Parts Warehouse', rows:whRows.slice().sort((a,b)=>b.rev-a.rev), rev:whRev},
+      {label:'Intercompany — Westmill Industries Ltd.', rows:intercoOnlyRows.slice().sort((a,b)=>b.rev-a.rev), rev:intercoRev},
+    ];
+    let tbodyHtml='';
+    groups.forEach(g=>{
+      if(!g.rows.length) return;
+      tbodyHtml+='<tr style="background:var(--panel)"><td colspan="9" style="padding:7px 12px;border-top:2px solid var(--line);font-weight:800;font-size:11.5px">'+
+        escapeHtml(g.label)+' &mdash; '+g.rows.length+' lines &middot; '+fmt0(g.rev)+'</td></tr>';
+      g.rows.forEach(r=>{
+        const reasonLabel=r.excl==='WH|INTERCO'?'WH + Interco':r.excl==='WH'?'Non-parts WH':'Intercompany';
+        const revCad=r.cur==='USD'?r.rev*_fx:r.rev;
+        tbodyHtml+='<tr class="nc-data">'+
+          '<td style="padding:5px 10px;white-space:nowrap"><span style="font-size:10px;font-weight:700;color:var(--amber);background:rgba(201,138,43,.12);border:1px solid rgba(201,138,43,.35);border-radius:4px;padding:1px 5px">'+escapeHtml(reasonLabel)+'</span></td>'+
+          '<td style="padding:5px 10px;font-weight:800;color:var(--steel)">'+escapeHtml(r.sonum||'—')+'</td>'+
+          '<td style="padding:5px 10px;white-space:nowrap">'+escapeHtml(r.date||'')+'</td>'+
+          '<td style="padding:5px 10px">'+escapeHtml(r.cust||'')+'</td>'+
+          '<td style="padding:5px 10px;font-family:monospace;font-size:11px">'+escapeHtml(r.inv||'')+'</td>'+
+          '<td style="padding:5px 10px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escapeHtml(r.desc||'')+'">'+escapeHtml(r.desc||'')+'</td>'+
+          '<td style="padding:5px 10px;white-space:nowrap">'+escapeHtml(r.warehouse||'')+'</td>'+
+          '<td style="padding:5px 10px">'+escapeHtml(r.fy||'')+'</td>'+
+          '<td style="padding:5px 10px;text-align:right">'+fmt0(revCad)+'</td>'+
+        '</tr>';
+      });
+    });
+    el('excl-thead').innerHTML=theadHtml;
+    el('excl-tbody').innerHTML=tbodyHtml||'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--mut)">No exclusion data — rebuild data.js to add excl field</td></tr>';
+  }
+
+  function wireToggle(btnId, caretId, sectionId){
+    el(btnId).addEventListener('click',()=>{
+      const open=el(btnId).getAttribute('aria-expanded')==='true';
+      el(btnId).setAttribute('aria-expanded',String(!open));
+      el(caretId).textContent=!open?'▼':'▶';
+      el(sectionId).style.display=!open?'':'none';
+    });
+  }
+  wireToggle('nc-list-toggle','nc-list-caret','nc-list-section');
+  wireToggle('excl-audit-toggle','excl-audit-caret','excl-audit-section');
+
+  syncNcGrp2();
+  initNcFyBtns();
+  initNcWHBtns();
+  renderExclAudit();
+  window.renderNoCostTab=renderNoCostTab;
+})();
+
+// ── Real Growth Tab ─────────────────────────────────────────────────────────
+const rgCharts = {};
+let rgSelFYs  = null;
+let rgEntity  = 'CA';
+let _rgParams = null;   // last rendered params — used by module-level functions
+
+function fyToYear(fy){ return 2000 + parseInt(fy.replace('FY','')); }
+
+function getRgParams(){
+  const sel = document.getElementById('rg-base');
+  return {
+    rate: (parseFloat(document.getElementById('rg-rate').value)||7) / 100,
+    base: sel.value || FY_ORDER[0],
+    fx:   parseFloat(document.getElementById('rg-fx').value)||1.3723,
+  };
+}
+
+function annualTotal(fy, cur){
+  const arr = MONTHLY[cur] && MONTHLY[cur][fy];
+  return arr ? arr.reduce((a,b)=>a+b,0) : 0;
+}
+
+// ── Partial-year detection & annualization ───────────────────────────────────
+// The current fiscal year is incomplete until its data reaches month-end. We
+// annualize it (run-rate from COMPLETE months only) so CAGRs and the growth
+// index are not dragged down by a half-finished final month.
+function rgDataCutoff(){
+  let mx = '';
+  for(const r of DATA){ if(r.date && r.date>mx) mx = r.date; }
+  return mx || null;   // 'YYYY-MM-DD'
+}
+function rgComputePartial(){
+  const cutoff = rgDataCutoff();
+  if(!cutoff) return {currentFY:null, completeMonths:12, cutoff:null};
+  const [y,m,d] = cutoff.split('-').map(Number);
+  const lastDay = new Date(y, m, 0).getDate();          // last calendar day of cutoff month
+  const monthComplete = d >= lastDay;
+  const fyYear = m>=7 ? y+1 : y;
+  const currentFY = 'FY'+String(fyYear).slice(2);
+  const fIdx = FY_MONTHS_GL.indexOf(String(m).padStart(2,'0')); // Jul=0 … Jun=11
+  const completeMonths = monthComplete ? fIdx+1 : fIdx;          // months fully elapsed in the FY
+  return {currentFY, completeMonths, cutoff};
+}
+const RG_PARTIAL = rgComputePartial();
+
+function rgIsAnnualized(fy){
+  return fy===RG_PARTIAL.currentFY && RG_PARTIAL.completeMonths>0 && RG_PARTIAL.completeMonths<12;
+}
+// Annual total, annualizing the current partial FY by run-rate from complete months
+function annualTotalAdj(fy, cur){
+  const arr = MONTHLY[cur] && MONTHLY[cur][fy];
+  if(!arr) return 0;
+  if(rgIsAnnualized(fy)){
+    const completeSum = arr.slice(0, RG_PARTIAL.completeMonths).reduce((a,b)=>a+b,0);
+    return completeSum * 12 / RG_PARTIAL.completeMonths;
+  }
+  return arr.reduce((a,b)=>a+b,0);
+}
+
+// Month-aware deflation: prices increase Jan 1, so:
+// - Jul-Dec (idx 0-5): haven't seen that year's increase yet → use prior year's deflation
+// - Jan-Jun (idx 6-11): have that year's increase → use current year's deflation
+function rgMonthDeflationFactor(fy, monthIdx){
+  const fyYear = fyToYear(fy);
+  const baseYear = fyToYear(_rgParams.base);
+  // Months 0-5 (Jul-Dec) are at the previous year's price level
+  const priceYear = monthIdx < 6 ? fyYear - 1 : fyYear;
+  const n = priceYear - baseYear;
+  return Math.pow(1 + _rgParams.rate, n);
+}
+
+function rgDeflate(v, fy, cur){ // full-year deflation (month-weighted: Jul-Dec at prior year price, Jan-Jun at current year price)
+  const arr = MONTHLY[cur] && MONTHLY[cur][fy];
+  if(!arr) return 0;
+  // Sum monthly deflations: each month deflated by its price level at the date
+  const deflated = arr.reduce((sum, rev, i) => sum + rev / rgMonthDeflationFactor(fy, i), 0);
+  return deflated;
+}
+
+function rgDeflatedMonthly(fy, cur){
+  const arr = (MONTHLY[cur]&&MONTHLY[cur][fy]) ? MONTHLY[cur][fy] : new Array(12).fill(0);
+  return arr.map((v, i) => v / rgMonthDeflationFactor(fy, i));
+}
+
+function rgCAGR(from, to, n){ return n>0 ? (Math.pow(to/from, 1/n)-1)*100 : 0; }
+
+// ── Monthly chart — module-level so entity toggle works after re-renders ──
+function rgBuildMonthlyTabs(){
+  const cont = document.getElementById('rg-fy-tabs');
+  cont.innerHTML = FY_ORDER.map(fy=>
+    `<button class="chart-tab${rgSelFYs.has(fy)?' on':''}" data-rgfy="${fy}">${fy}</button>`
+  ).join('');
+  cont.querySelectorAll('[data-rgfy]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const fy=btn.getAttribute('data-rgfy');
+      if(rgSelFYs.has(fy)){if(rgSelFYs.size>1)rgSelFYs.delete(fy);}else rgSelFYs.add(fy);
+      rgRenderMonthly();
+    });
+  });
+}
+
+function rgRenderMonthly(){
+  rgBuildMonthlyTabs();
+  if(rgCharts.monthly) rgCharts.monthly.destroy();
+  const cur      = rgEntity==='CA' ? 'CAD' : rgEntity==='USA' ? 'USD' : 'ALL';
+  const curLabel = rgEntity==='CA' ? 'CAD' : rgEntity==='USA' ? 'USD' : 'CAD (combined)';
+  const fys      = [...rgSelFYs].sort();
+  const tickFmt  = v => '$'+(v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'k':v);
+
+  // For "ALL" mode, combine CA + USA (USA converted to CAD)
+  const getMonthlyData = (fy, cur) => {
+    if(cur==='ALL'){
+      const cad = rgDeflatedMonthly(fy, 'CAD');
+      const usd = rgDeflatedMonthly(fy, 'USD');
+      const fx = _rgParams.fx;
+      return cad.map((v, i) => v + usd[i]*fx);
+    }
+    return rgDeflatedMonthly(fy, cur);
+  };
+
+  rgCharts.monthly = new Chart(document.getElementById('rg-chart-monthly').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:MONTH_LABELS,
+      datasets:fys.map(fy=>({
+        label:fy, data:getMonthlyData(fy, cur),
+        backgroundColor:FY_COLORS[fy]||'#999', borderRadius:3, borderSkipped:false
+      }))
+    },
+    options:{
+      responsive:true, maintainAspectRatio:true, interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label}: $${Math.round(c.raw||0).toLocaleString()} ${_rgParams.base} ${curLabel}`}}},
+      scales:{
+        x:{grid:{color:'#e6e0d4'},ticks:{font:{size:10.5,weight:'600'}}},
+        y:{grid:{color:'#e6e0d4'},ticks:{font:{size:10.5},callback:tickFmt}}
+      }
+    }
+  });
+  document.getElementById('rg-monthly-legend').innerHTML = fys.map(fy=>
+    `<div class="chart-legend-item"><div class="chart-legend-dot" style="background:${FY_COLORS[fy]||'#999'}"></div>${fy}</div>`
+  ).join('');
+}
+
+// Wire entity toggle once at init
+document.querySelectorAll('[data-rgent]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    rgEntity = btn.getAttribute('data-rgent');
+    document.querySelectorAll('[data-rgent]').forEach(b=>{
+      b.classList.toggle('on', b===btn);
+      b.classList.remove('cad','usd');
+    });
+    if(rgEntity==='CA') btn.classList.add('cad');
+    else if(rgEntity==='USA') btn.classList.add('usd');
+    // ALL button doesn't add a color class, uses default style
+    if(_rgParams) rgRenderMonthly();
+  });
+});
+
+// Update FX display when input changes
+document.getElementById('rg-fx')?.addEventListener('change', ()=>{
+  const fx = parseFloat(document.getElementById('rg-fx').value)||1.3723;
+  const fxEl = document.getElementById('rg-fx-display');
+  if(fxEl) fxEl.textContent = fx.toFixed(3);
+});
+
+function renderRealGrowth(){
+  // Populate base year selector on first call
+  const sel = document.getElementById('rg-base');
+  if(!sel.options.length){
+    FY_ORDER.forEach(fy=>{ const o=document.createElement('option'); o.value=fy; o.text=fy; sel.appendChild(o); });
+    // Default to FY22 — first post-COVID "normal" year. FY21 is a depressed
+    // recovery low that produces a misleading coincidental CAGR.
+    sel.value = FY_ORDER.includes('FY22') ? 'FY22' : FY_ORDER[0];
+  }
+  if(!rgSelFYs) rgSelFYs = new Set([FY_ORDER[FY_ORDER.length-2]||FY_ORDER[0], FY_ORDER[FY_ORDER.length-1]]);
+
+  _rgParams = getRgParams();
+  const {rate, base, fx} = _rgParams;
+
+  const fmt1    = v => (v>=0?'+':'')+v.toFixed(1)+'%';
+  const fmtK    = v => '$'+(Math.abs(v)>=1000000?(v/1000000).toFixed(2)+'M':(v/1000).toFixed(0)+'k');
+  const tickFmt = v => '$'+(v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'k':v);
+
+  // ── KPI: measure from the selected base year to the last FY with data ──
+  // The current partial FY is annualized (run-rate) via annualTotalAdj.
+  function entityKpi(cur){
+    const fys  = FY_ORDER.filter(fy=>annualTotal(fy,cur)>0);
+    const last  = fys[fys.length-1];
+    // Use base year if it has data, else earliest
+    const first = fys.includes(base) ? base : fys[0];
+    const n     = fyToYear(last) - fyToYear(first);
+    const nomF  = annualTotalAdj(first, cur), nomL = annualTotalAdj(last, cur);
+    const defF  = rgDeflate(nomF, first, cur),  defL = rgDeflate(nomL, last, cur);
+    return { first, last, n, nomF, nomL,
+             nomC: rgCAGR(nomF, nomL, n),
+             realC: rgCAGR(defF, defL, n),
+             lastAnnualized: rgIsAnnualized(last) };
+  }
+
+  const ca  = entityKpi('CAD');
+  const usa = entityKpi('USD');
+
+  // Warn if the depressed COVID-recovery year (FY21) is the base
+  const baseLowNote = base==='FY21' ? ' ⚠ low base (COVID recovery)' : '';
+  const annTag = ca.lastAnnualized ? `${ca.last}*` : ca.last;
+  const annTagU= usa.lastAnnualized ? `${usa.last}*` : usa.last;
+
+  document.getElementById('rg-ca-range').textContent  = `${ca.first}→${annTag}${baseLowNote}`;
+  document.getElementById('rg-us-range').textContent  = `${usa.first}→${annTagU}${baseLowNote}`;
+  document.getElementById('rg-ca-nom').textContent    = fmt1(ca.nomC);
+  document.getElementById('rg-ca-nom-sub').textContent= `${fmtK(ca.nomF)} → ${fmtK(ca.nomL)} CAD/yr`;
+  document.getElementById('rg-us-nom').textContent    = fmt1(usa.nomC);
+  document.getElementById('rg-us-nom-sub').textContent= `${fmtK(usa.nomF)} → ${fmtK(usa.nomL)} USD/yr`;
+
+  const pricePct = (rate*100).toFixed(0);
+  const caRealEl = document.getElementById('rg-ca-real');
+  caRealEl.textContent = fmt1(ca.realC);
+  caRealEl.className   = 'val '+(ca.realC>=0?'pos':'neg');
+  document.getElementById('rg-ca-real-sub').textContent = `Nominal ${fmt1(ca.nomC)}/yr, ${pricePct}%/yr price compounded out → ${fmt1(ca.realC)}/yr real volume`;
+
+  const usRealEl = document.getElementById('rg-us-real');
+  usRealEl.textContent = fmt1(usa.realC);
+  usRealEl.className   = 'val '+(usa.realC>=0?'pos':'neg');
+  document.getElementById('rg-us-real-sub').textContent = `Nominal ${fmt1(usa.nomC)}/yr, ${pricePct}%/yr price compounded out → ${fmt1(usa.realC)}/yr real volume`;
+
+  // ── Annualization note ──
+  const noteEl = document.getElementById('rg-annualize-note');
+  if(RG_PARTIAL.currentFY && rgIsAnnualized(RG_PARTIAL.currentFY)){
+    const cm = RG_PARTIAL.completeMonths;
+    noteEl.style.display = 'block';
+    noteEl.innerHTML = `⚠ <strong>${RG_PARTIAL.currentFY}* is an annualized estimate.</strong> `
+      + `Data runs through ${RG_PARTIAL.cutoff}, so ${RG_PARTIAL.currentFY} has ${cm} complete month${cm===1?'':'s'}. `
+      + `Values marked * are projected to a full year at the ${cm}-month run-rate (current month excluded). `
+      + `Monthly chart below shows actual, un-annualized figures.`;
+  } else {
+    noteEl.style.display = 'none';
+  }
+
+  // ── Destroy old charts ──
+  Object.values(rgCharts).forEach(c=>c.destroy());
+  Object.keys(rgCharts).forEach(k=>delete rgCharts[k]);
+
+  // ── Precompute annual series (current partial FY annualized) ──
+  const caNom  = FY_ORDER.map(fy=>annualTotalAdj(fy,'CAD'));
+  const usNom  = FY_ORDER.map(fy=>annualTotalAdj(fy,'USD'));
+  const caDefl = FY_ORDER.map(fy=>rgDeflate(annualTotalAdj(fy,'CAD'), fy, 'CAD'));
+  const usDefl = FY_ORDER.map(fy=>rgDeflate(annualTotalAdj(fy,'USD'), fy, 'USD'));
+  // Labels: mark annualized FY with *
+  const rgLabels = FY_ORDER.map(fy=>rgIsAnnualized(fy) ? fy+'*' : fy);
+  const annSuffix = i => rgIsAnnualized(FY_ORDER[i]) ? ' (annualized est.)' : '';
+
+  // ── Shared y-axis max for the paired bar charts ──
+  // Convert USA to CAD for scale comparison, then pick max across both
+  const caAllVals = [...caNom, ...caDefl];
+  const usAllVals = [...usNom.map(v=>v*fx), ...usDefl.map(v=>v*fx)];
+  const sharedMax = Math.ceil(Math.max(...caAllVals, ...usAllVals) * 1.1 / 100000) * 100000;
+
+  // ── Hero: Growth Index (base = 100) ──
+  const caBaseDefl = caDefl[FY_ORDER.indexOf(base)] || 1;
+  const usBaseDefl = usDefl[FY_ORDER.indexOf(base)] || 1;
+  const caNomBase  = caNom[FY_ORDER.indexOf(base)]  || 1;
+  const usNomBase  = usNom[FY_ORDER.indexOf(base)]  || 1;
+
+  rgCharts.index = new Chart(document.getElementById('rg-chart-index').getContext('2d'),{
+    type:'line',
+    data:{
+      labels:rgLabels,
+      datasets:[
+        { label:'CA — Real volume', data:caDefl.map(v=>+(v/caBaseDefl*100).toFixed(1)),
+          borderColor:'#4a5d3a', borderWidth:3, pointRadius:5,
+          pointBackgroundColor:'#4a5d3a', pointBorderColor:'#fff', pointBorderWidth:2, tension:0.3, fill:false },
+        { label:'USA — Real volume', data:usDefl.map(v=>+(v/usBaseDefl*100).toFixed(1)),
+          borderColor:'#3a4a5d', borderWidth:3, pointRadius:5,
+          pointBackgroundColor:'#3a4a5d', pointBorderColor:'#fff', pointBorderWidth:2, tension:0.3, fill:false },
+        { label:'CA — Nominal', data:caNom.map(v=>+(v/caNomBase*100).toFixed(1)),
+          borderColor:'#4a5d3a', borderWidth:1.5, borderDash:[4,3], pointRadius:0, tension:0.3, fill:false },
+        { label:'USA — Nominal', data:usNom.map(v=>+(v/usNomBase*100).toFixed(1)),
+          borderColor:'#3a4a5d', borderWidth:1.5, borderDash:[4,3], pointRadius:0, tension:0.3, fill:false },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:true, interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:true,position:'bottom',labels:{font:{size:11,weight:'700'},boxWidth:12,padding:14}},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw}${annSuffix(c.dataIndex)}`}}
+      },
+      scales:{
+        x:{grid:{color:'#e6e0d4'},ticks:{font:{size:10.5,weight:'600'}}},
+        y:{grid:{color:'#e6e0d4'},ticks:{font:{size:10.5},callback:v=>v.toFixed(0)},
+          title:{display:true,text:`Index (${base} = 100)`,font:{size:10,weight:'700'},color:'#7a7264'}}
+      }
+    }
+  });
+
+  // ── CA annual bars (CAD) ──
+  rgCharts.ca = new Chart(document.getElementById('rg-chart-ca').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:rgLabels,
+      datasets:[
+        {label:'Nominal CAD',         data:caNom,  backgroundColor:'#a8c09a', borderRadius:3, borderSkipped:false},
+        {label:`Real (${base} CAD)`,  data:caDefl, backgroundColor:'#4a5d3a', borderRadius:3, borderSkipped:false},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:true, interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11,weight:'700'},boxWidth:12,padding:12}},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label}: $${Math.round(c.raw||0).toLocaleString()} CAD/yr${annSuffix(c.dataIndex)}`}}},
+      scales:{x:{grid:{color:'#e6e0d4'},ticks:{font:{size:10.5,weight:'600'}}},
+              y:{grid:{color:'#e6e0d4'},max:sharedMax,ticks:{font:{size:10.5},callback:tickFmt}}}
+    }
+  });
+
+  // ── USA annual bars (USD, shared CAD-equivalent scale) ──
+  rgCharts.us = new Chart(document.getElementById('rg-chart-us').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:rgLabels,
+      datasets:[
+        {label:'Nominal USD',         data:usNom,  backgroundColor:'#9ab0c0', borderRadius:3, borderSkipped:false},
+        {label:`Real (${base} USD)`,  data:usDefl, backgroundColor:'#3a4a5d', borderRadius:3, borderSkipped:false},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:true, interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11,weight:'700'},boxWidth:12,padding:12}},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label}: $${Math.round(c.raw||0).toLocaleString()} USD/yr${annSuffix(c.dataIndex)}`}}},
+      scales:{x:{grid:{color:'#e6e0d4'},ticks:{font:{size:10.5,weight:'600'}}},
+              // Scale to CAD-equivalent max so bars are visually comparable
+              y:{grid:{color:'#e6e0d4'},max:Math.ceil(sharedMax/fx/100000)*100000,
+                 ticks:{font:{size:10.5},callback:tickFmt}}}
+    }
+  });
+
+  // ── Deflated monthly ──
+  rgRenderMonthly();
+
+  // Store KPI data for modal display
+  window.rgLastKpi = {ca, usa, rate, base, fx};
+}
+
+// Show KPI calculation details in modal
+function rgShowKpiCalc(kpiId){
+  if(!window.rgLastKpi) return;
+  const {ca, usa, rate, base, fx} = window.rgLastKpi;
+  const entity = kpiId.startsWith('ca')?'CA':'USA';
+  const kpi = entity==='CA'?ca:usa;
+  const cur = entity==='CA'?'CAD':'USD';
+  const isReal = kpiId.endsWith('real');
+
+  const yr = fy => 2000 + parseInt(fy.replace('FY',''));
+  const basYr = yr(kpi.first), endYr = yr(kpi.last);
+  const nomRate = ((kpi.nomL/kpi.nomF)**(1/kpi.n)-1)*100;
+  const realRate = ((kpi.realC/100+1)**(1/kpi.n)-1)*100;
+
+  let calc = `${entity} — ${isReal?'Real':'Nominal'} CAGR (${kpi.first}→${kpi.last})\n`;
+  calc += `═══════════════════════════════════════════\n\n`;
+  calc += `Base year (${kpi.first}):  $${Math.round(kpi.nomF).toLocaleString()} ${cur}\n`;
+  calc += `Final year (${kpi.last}):  $${Math.round(kpi.nomL).toLocaleString()} ${cur}\n`;
+  calc += `Period: ${kpi.n} years\n\n`;
+
+  if(isReal){
+    calc += `DEFLATION (restating in ${base} prices):\n`;
+    calc += `Annual price increase: ${(rate*100).toFixed(1)}%/yr\n`;
+    calc += `Each month Jul-Dec uses prior year deflation,\n`;
+    calc += `each month Jan-Jun uses current year deflation.\n\n`;
+    const deflFmt = v => `$${Math.round(v).toLocaleString()}`;
+    const baseDefl = kpi.nomF / Math.pow(1+rate, 0);
+    const endDefl = kpi.nomL / Math.pow(1+rate, kpi.n);
+    calc += `Base-year dollars: ${deflFmt(baseDefl)}\n`;
+    calc += `Final-year dollars (deflated): ${deflFmt(endDefl)}\n\n`;
+    calc += `REAL CAGR (volume only):\n`;
+    calc += `= (${deflFmt(endDefl)} / ${deflFmt(baseDefl)}) ^ (1/${kpi.n}) - 1\n`;
+    calc += `= ${kpi.realC.toFixed(2)}%/yr\n`;
+  } else {
+    calc += `NOMINAL CAGR (includes price increases):\n`;
+    calc += `= (${Math.round(kpi.nomL)} / ${Math.round(kpi.nomF)}) ^ (1/${kpi.n}) - 1\n`;
+    calc += `= ${kpi.nomC.toFixed(2)}%/yr\n`;
+  }
+
+  document.getElementById('rg-kpi-modal-title').textContent = `${entity} CAGR Calculation`;
+  document.getElementById('rg-kpi-modal-body').textContent = calc;
+  document.getElementById('rg-kpi-modal').style.display = 'flex';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AI INSIGHTS ENGINE — PE Analyst Narrative & Analysis
+// ══════════════════════════════════════════════════════════════════════════════
+
+function insightsAnalyze(){
+  const yr = fy => 2000 + parseInt(fy.replace('FY',''));
+  const tot = (fy, cur) => MONTHLY[cur][fy].reduce((a,b)=>a+b,0);
+  const cagr = (f, t, n) => n>0 ? (Math.pow(t/f, 1/n)-1)*100 : 0;
+
+  // Get latest two complete FYs for comparison
+  const fys = FY_ORDER.filter(fy => tot(fy,'CAD')>0 && tot(fy,'USD')>0);
+  const current = fys[fys.length-1];  // Most recent
+  const prior = fys[fys.length-2];    // Year prior
+
+  // Calculate metrics
+  const ca_current = tot(current, 'CAD');
+  const ca_prior = tot(prior, 'CAD');
+  const us_current = tot(current, 'USD');
+  const us_prior = tot(prior, 'USD');
+
+  const ca_yoy = cagr(ca_prior, ca_current, 1);
+  const us_yoy = cagr(us_prior, us_current, 1);
+
+  const total_current = ca_current + us_current;
+  const ca_mix = (ca_current / total_current * 100).toFixed(1);
+  const us_mix = (us_current / total_current * 100).toFixed(1);
+
+  // 4-year trend (FY22 to current)
+  const base_fy = fys[Math.max(0, fys.length-5)];  // ~4 years back
+  const n_years = yr(current) - yr(base_fy);
+  const ca_ltcagr = cagr(tot(base_fy,'CAD'), ca_current, n_years);
+  const us_ltcagr = cagr(tot(base_fy,'USD'), us_current, n_years);
+
+  // Price vs volume (assuming 7% annual price increase)
+  const price_rate = 0.07;
+  const ca_real_cagr = ca_ltcagr > 0 ? ((1 + ca_ltcagr/100) / (Math.pow(1+price_rate, n_years)**(1/n_years)) - 1)*100 : 0;
+  const us_real_cagr = us_ltcagr > 0 ? ((1 + us_ltcagr/100) / (Math.pow(1+price_rate, n_years)**(1/n_years)) - 1)*100 : 0;
+  const ca_price_pct = ca_ltcagr - ca_real_cagr;
+  const us_price_pct = us_ltcagr - us_real_cagr;
+
+  // Elasticity concern threshold
+  const elasticity_risk = Math.abs(us_price_pct) > 6.5;  // Price driving >6.5pp of growth
+
+  // Forecast 12 months
+  const forecast_ca = ca_current * Math.pow(1 + ca_yoy/100, 1);
+  const forecast_us = us_current * Math.pow(1 + us_yoy/100, 1);
+
+  return {
+    current, prior, base_fy, n_years,
+    ca: {current: ca_current, prior: ca_prior, yoy: ca_yoy, ltcagr: ca_ltcagr, real_cagr: ca_real_cagr, price_pct: ca_price_pct, forecast: forecast_ca},
+    us: {current: us_current, prior: us_prior, yoy: us_yoy, ltcagr: us_ltcagr, real_cagr: us_real_cagr, price_pct: us_price_pct, forecast: forecast_us},
+    mix: {ca: ca_mix, us: us_mix},
+    elasticity_risk,
+    total: {current: total_current, forecast: forecast_ca + forecast_us}
+  };
+}
+
+function insightsGenerate(){
+  const data = insightsAnalyze();
+  const fmt$ = v => '$' + (Math.abs(v)>=1000000?(v/1000000).toFixed(2)+'M':(v/1000).toFixed(0)+'k');
+  const fmtPct = v => (v>=0?'+':'')+v.toFixed(1)+'%';
+
+  let html = '';
+
+  // ── EXECUTIVE SUMMARY ──
+  html += `
+  <div style="background:#2a5a3a;color:#fff;padding:24px;border-radius:12px;margin-bottom:24px">
+    <h2 style="margin:0 0 16px 0;font-size:20px">Executive Summary</h2>
+    <div style="line-height:1.8;font-size:14px">
+      <p style="margin:0 0 12px 0"><strong>Portfolio Status:</strong> Bifurcated growth. Canada declining, USA growing modestly. Geographic mix is shifting toward USA, but real growth (volume) is weak across both entities.</p>
+      <p style="margin:0 0 12px 0"><strong>Key Insight:</strong> Nominal growth masks a troubling reality: Canada is shrinking in real terms, and USA growth is heavily price-driven. Without addressing unit economics and volume sustainability, margin compression and competitive risk will accelerate.</p>
+      <p style="margin:0 0 0 0"><strong>Recommendation:</strong> Conduct immediate root-cause analysis on Canada. Unlock real volume growth in USA. Stress-test pricing elasticity assumptions.</p>
+    </div>
+  </div>`;
+
+  // ── KEY METRICS ──
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px">`;
+
+  // Canada
+  html += `<div style="background:#f1ecdf;border:2px solid #7a6a4a;border-radius:12px;padding:16px">
+    <div style="font-size:11px;font-weight:700;color:#7a7264;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">Canada</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div>
+        <div style="font-size:10px;color:#7a7264;font-weight:600;margin-bottom:4px">YoY (${data.prior}→${data.current})</div>
+        <div style="font-size:20px;font-weight:900;color:${data.ca.yoy<0?'#c91f16':'#2a5a3a'}">${fmtPct(data.ca.yoy)}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:#7a7264;font-weight:600;margin-bottom:4px">CAGR (${data.n_years}yr nominal)</div>
+        <div style="font-size:20px;font-weight:900;color:${data.ca.ltcagr<0?'#c91f16':'#2a5a3a'}">${fmtPct(data.ca.ltcagr)}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:#7a7264;font-weight:600;margin-bottom:4px">Real CAGR (volume)</div>
+        <div style="font-size:18px;font-weight:900;color:#c91f16">${fmtPct(data.ca.real_cagr)}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:#7a7264;font-weight:600;margin-bottom:4px">Current Revenue</div>
+        <div style="font-size:16px;font-weight:700;color:#7a7264">${fmt$(data.ca.current)}</div>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #7a6a4a;border-radius:8px;padding:10px;font-size:10px;color:#7a7264;line-height:1.6">
+      <strong>12-Month Forecast:</strong> ${fmt$(data.ca.forecast)}
+    </div>
+  </div>`;
+
+  // USA
+  html += `<div style="background:#d5e0ea;border:2px solid #3a4a5d;border-radius:12px;padding:16px">
+    <div style="font-size:11px;font-weight:700;color:#3a4a5d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">USA</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div>
+        <div style="font-size:10px;color:#3a4a5d;font-weight:600;margin-bottom:4px">YoY (${data.prior}→${data.current})</div>
+        <div style="font-size:20px;font-weight:900;color:${data.us.yoy>8?'#2a5a3a':'#f97300'}">${fmtPct(data.us.yoy)}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:#3a4a5d;font-weight:600;margin-bottom:4px">CAGR (${data.n_years}yr nominal)</div>
+        <div style="font-size:20px;font-weight:900;color:${data.us.ltcagr>8?'#2a5a3a':'#f97300'}">${fmtPct(data.us.ltcagr)}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:#3a4a5d;font-weight:600;margin-bottom:4px">Real CAGR (volume)</div>
+        <div style="font-size:18px;font-weight:900;color:#3a4a5d">${fmtPct(data.us.real_cagr)}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:#3a4a5d;font-weight:600;margin-bottom:4px">Current Revenue</div>
+        <div style="font-size:16px;font-weight:700;color:#3a4a5d">${fmt$(data.us.current)}</div>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #3a4a5d;border-radius:8px;padding:10px;font-size:10px;color:#3a4a5d;line-height:1.6">
+      <strong>12-Month Forecast:</strong> ${fmt$(data.us.forecast)}
+    </div>
+  </div>`;
+
+  html += `</div>`;
+
+  // ── PORTFOLIO MIX ──
+  html += `<div style="background:#f1ecdf;border:1px solid #e6e0d4;border-radius:12px;padding:16px;margin-bottom:24px">
+    <div style="font-size:12px;font-weight:700;color:#7a7264;margin-bottom:12px">Geographic Mix (${data.current})</div>
+    <div style="display:flex;gap:16px">
+      <div style="flex:1">
+        <div style="background:#7a6a4a;height:20px;border-radius:4px;margin-bottom:8px"></div>
+        <div style="font-size:11px;font-weight:700;color:#7a7264">Canada<br/>${data.mix.ca}%</div>
+      </div>
+      <div style="flex:1">
+        <div style="background:#3a4a5d;height:20px;border-radius:4px;margin-bottom:8px"></div>
+        <div style="font-size:11px;font-weight:700;color:#3a4a5d">USA<br/>${data.mix.us}%</div>
+      </div>
+    </div>
+  </div>`;
+
+  // ── ANALYSIS NARRATIVE ──
+  html += `<div style="background:#fff3e6;border:2px solid #f97300;border-radius:12px;padding:20px;margin-bottom:24px">
+    <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:#c91f16">📊 Detailed Analysis</h3>`;
+
+  // Canada analysis
+  html += `<div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #fce4d6">
+    <h4 style="margin:0 0 10px 0;font-size:13px;font-weight:700;color:#7a6a4a">Canada: Structural Decline</h4>
+    <p style="margin:0 0 8px 0;font-size:12px;line-height:1.6;color:#5a4a3a">
+      YoY: <strong>${fmtPct(data.ca.yoy)}</strong> | ${data.n_years}-Year CAGR: <strong>${fmtPct(data.ca.ltcagr)}</strong> nominal, <strong>${fmtPct(data.ca.real_cagr)}</strong> real
+    </p>
+    <p style="margin:0;font-size:12px;line-height:1.6;color:#5a4a3a">
+      <strong>The Problem:</strong> Canada's decline is <strong>real</strong>, not just price-related. Even after removing the 7% annual price increase, Canada is down ${Math.abs(data.ca.real_cagr).toFixed(1)}% in real terms over ${data.n_years} years. This indicates <strong>volume loss, customer attrition, or market share erosion</strong>—none of which are benign.
+    </p>
+  </div>`;
+
+  // USA analysis
+  html += `<div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #fce4d6">
+    <h4 style="margin:0 0 10px 0;font-size:13px;font-weight:700;color:#3a4a5d">USA: Nominal Growth Masking Weak Volume</h4>
+    <p style="margin:0 0 8px 0;font-size:12px;line-height:1.6;color:#2a3a4a">
+      YoY: <strong>${fmtPct(data.us.yoy)}</strong> | ${data.n_years}-Year CAGR: <strong>${fmtPct(data.us.ltcagr)}</strong> nominal, <strong>${fmtPct(data.us.real_cagr)}</strong> real
+    </p>
+    <p style="margin:0;font-size:12px;line-height:1.6;color:#2a3a4a">
+      <strong>The Problem:</strong> Of the ${fmtPct(data.us.ltcagr)} nominal growth, <strong>~${data.us.price_pct.toFixed(1)}pp is price increases</strong>, leaving only <strong>${data.us.real_cagr.toFixed(1)}%/yr real volume growth</strong>.
+      ${data.elasticity_risk ? `<strong style="color:#c91f16">⚠ Price is driving >6.5 percentage points of growth.</strong> This is unsustainable. Elasticity risk is HIGH.` : `This is sustainable but modest—well below GDP growth.`}
+    </p>
+  </div>`;
+
+  // Portfolio risk
+  html += `<div style="padding-bottom:0">
+    <h4 style="margin:0 0 10px 0;font-size:13px;font-weight:700;color:#c91f16">⚠️ Portfolio Risk</h4>
+    <p style="margin:0;font-size:12px;line-height:1.6;color:#5a4a3a">
+      You have a <strong>${data.mix.ca}% / ${data.mix.us}% split</strong> with Canada in structural decline and USA growing only on price. <strong>If USA elasticity breaks (customers defect to cheaper competitors), you have no downside cushion.</strong> Combined real growth across the portfolio is <strong>${(((data.ca.real_cagr*data.mix.ca/100 + data.us.real_cagr*data.mix.us/100))).toFixed(1)}%/yr</strong>—below inflation and below healthy business standards.
+    </p>
+  </div>`;
+
+  html += `</div>`;
+
+  // ── RED FLAGS & OPPORTUNITIES ──
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px">
+    <div style="background:#ffe6e6;border:2px solid #c91f16;border-radius:12px;padding:16px">
+      <h3 style="margin:0 0 12px 0;font-size:14px;font-weight:700;color:#c91f16">🚨 Red Flags</h3>
+      <ul style="margin:0;padding-left:20px;font-size:12px;line-height:1.8;color:#7a2a2a">
+        <li><strong>Canada cliff:</strong> Real CAGR of ${fmtPct(data.ca.real_cagr)} indicates structural issues, not cyclicality. Immediate investigation required.</li>
+        <li><strong>USA price dependency:</strong> ${data.us.price_pct.toFixed(1)}pp of growth is price. Competitors with better unit economics will exploit this.</li>
+        <li><strong>Portfolio concentration:</strong> ${data.mix.us}% of revenue from USA. Canada's decline means USA carries entire growth burden.</li>
+        <li><strong>Cash flow risk:</strong> Declining real volume = lower throughput = margin compression if fixed costs don't fall.</li>
+      </ul>
+    </div>
+    <div style="background:#e6f3e6;border:2px solid #2a5a3a;border-radius:12px;padding:16px">
+      <h3 style="margin:0 0 12px 0;font-size:14px;font-weight:700;color:#2a5a3a">💡 Opportunities</h3>
+      <ul style="margin:0;padding-left:20px;font-size:12px;line-height:1.8;color:#1a3a2a">
+        <li><strong>Canada turnaround:</strong> If driven by product mix, pricing, or competitive loss—fix it. Canada at historical volumes + margin improvement = significant upside.</li>
+        <li><strong>USA volume expansion:</strong> +2-3% real volume growth (beyond current ${data.us.real_cagr.toFixed(1)}%) = 5-8% nominal growth on stronger, more sustainable footing.</li>
+        <li><strong>Margin expansion:</strong> Switching Canada mix to higher-margin products could offset volume decline and improve consolidated margins.</li>
+        <li><strong>Geographic diversification:</strong> Don't be dependent on USA. Re-establish growth in Canada or expand into other markets.</li>
+      </ul>
+    </div>
+  </div>`;
+
+  // ── RECOMMENDATIONS ──
+  html += `<div style="background:#f1ecdf;border:2px solid #7a6a4a;border-radius:12px;padding:20px">
+    <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:#7a6a4a">🎯 Actionable Recommendations</h3>
+    <div style="display:grid;gap:16px">
+      <div style="padding:12px;background:#fff;border-left:4px solid #7a6a4a;border-radius:4px">
+        <div style="font-size:12px;font-weight:700;color:#7a6a4a;margin-bottom:6px">1. Root-Cause Canada Analysis (Immediate)</div>
+        <div style="font-size:11px;line-height:1.6;color:#5a4a3a">Segment Canada revenue by customer cohort, product line, and margin tier. Is this market contraction, share loss, or mix shift? Determine in next 30 days.</div>
+      </div>
+      <div style="padding:12px;background:#fff;border-left:4px solid #7a6a4a;border-radius:4px">
+        <div style="font-size:12px;font-weight:700;color:#7a6a4a;margin-bottom:6px">2. Margin & Unit Economics Audit (Next 60 Days)</div>
+        <div style="font-size:11px;line-height:1.6;color:#5a4a3a">Calculate gross margin, EBITDA margin, and revenue-per-customer/SKU for both Canada and USA. Identify what's driving the divergence and where upside exists.</div>
+      </div>
+      <div style="padding:12px;background:#fff;border-left:4px solid #7a6a4a;border-radius:4px">
+        <div style="font-size:12px;font-weight:700;color:#7a6a4a;margin-bottom:6px">3. Price Elasticity Testing (Next 90 Days)</div>
+        <div style="font-size:11px;line-height:1.6;color:#5a4a3a">Model out the impact of 7% annual price increases on customer attrition. If elasticity is worse than -0.5, pricing power is weaker than assumed and competitive risk is high.</div>
+      </div>
+      <div style="padding:12px;background:#fff;border-left:4px solid #7a6a4a;border-radius:4px">
+        <div style="font-size:12px;font-weight:700;color:#7a6a4a;margin-bottom:6px">4. USA Volume Growth Initiative (Strategic)</div>
+        <div style="font-size:11px;line-height:1.6;color:#5a4a3a">Set a target: unlock 2-3% incremental real volume growth in USA. This requires product innovation, market expansion, or competitive winning. Build a plan to get there.</div>
+      </div>
+      <div style="padding:12px;background:#fff;border-left:4px solid #7a6a4a;border-radius:4px">
+        <div style="font-size:12px;font-weight:700;color:#7a6a4a;margin-bottom:6px">5. Portfolio Rebalancing (Medium-Term)</div>
+        <div style="font-size:11px;line-height:1.6;color:#5a4a3a">Don't be a 2-geography portfolio where one is declining. Commit to either stabilizing Canada or expanding geographically. Reduce concentration risk.</div>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('insights-container').innerHTML = html;
+}
+
+// Wire up Insights tab
+document.querySelector('.tab-btn[data-tab="insights"]')?.addEventListener('click', () => {
+  if(!document.getElementById('insights-container').innerHTML.includes('Executive')) insightsGenerate();
+});
+
+// Wire up controls
+['rg-rate','rg-fx','rg-base'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('change', ()=>{ if(activeTab==='growth') renderRealGrowth(); });
+});
+
+// ── Auto-reload when build_data.py regenerates data.js ──
+// DISABLED: Causes navigation issues during active use
+// Uncomment to re-enable auto-reload during development
+/*
+(function(){
+  let lastTs = typeof BUILD_TS !== 'undefined' ? BUILD_TS : 0;
+  setInterval(async ()=>{
+    try{
+      const r = await fetch('version.json?_='+Date.now());
+      const {ts} = await r.json();
+      if(ts && ts !== lastTs){ lastTs = ts; location.reload(); }
+    }catch(e){}
+  }, 5000);
+})();
+*/
+
+</script>
+</body>
+</html>
